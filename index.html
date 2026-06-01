@@ -1,959 +1,848 @@
-import { useState, useEffect, useCallback } from "react";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PieChart, Pie, Cell } from "recharts";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LIFE OS — Personal Operating System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0b0f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0b0f}
+::-webkit-scrollbar-thumb{background:#2a3040;border-radius:2px}
+input,textarea,select{background:#0a0b0f;border:1px solid #1e2330;color:#e8eaf0;font-family:'Syne',sans-serif;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;width:100%;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:#00d4ff}
+textarea{resize:vertical;min-height:72px}
+button{cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all .2s}
+label{font-size:11px;color:#6b7280;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;display:block}
+h1,h2,h3,h4{font-weight:700}
+.mono{font-family:'JetBrains Mono',monospace}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.slide-in{animation:slideIn .3s ease forwards}
+input[type=range]{padding:0;border:none;background:transparent}
+input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
+input[type=file]{font-size:11px;padding:6px 8px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {useState,useEffect,useCallback,useRef} = React;
+const {
+  BarChart,Bar,LineChart,Line,XAxis,YAxis,Tooltip,
+  ResponsiveContainer,RadarChart,Radar,PolarGrid,
+  PolarAngleAxis,PieChart,Pie,Cell
+} = Recharts;
 
-// ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
-  bg: "#0a0b0f",
-  surface: "#111318",
-  card: "#161a22",
-  border: "#1e2330",
-  accent: "#00d4ff",
-  accentDim: "#0099bb",
-  gold: "#f5c842",
-  green: "#00e676",
-  red: "#ff3d57",
-  yellow: "#ffd600",
-  purple: "#b388ff",
-  text: "#e8eaf0",
-  muted: "#6b7280",
-  dim: "#2a3040",
+  bg:"#0a0b0f",surface:"#111318",card:"#161a22",border:"#1e2330",
+  accent:"#00d4ff",gold:"#f5c842",green:"#00e676",red:"#ff3d57",
+  yellow:"#ffd600",purple:"#b388ff",text:"#e8eaf0",muted:"#6b7280",dim:"#2a3040"
 };
 
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:${C.bg};color:${C.text};font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-  ::-webkit-scrollbar{width:4px}
-  ::-webkit-scrollbar-track{background:${C.bg}}
-  ::-webkit-scrollbar-thumb{background:${C.dim};border-radius:2px}
-  input,textarea,select{background:${C.bg};border:1px solid ${C.border};color:${C.text};font-family:'Syne',sans-serif;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;width:100%;transition:border .2s}
-  input:focus,textarea:focus,select:focus{border-color:${C.accent}}
-  textarea{resize:vertical;min-height:72px}
-  button{cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all .2s}
-  label{font-size:11px;color:${C.muted};letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;display:block}
-  h1,h2,h3,h4{font-weight:700}
-  .mono{font-family:'JetBrains Mono',monospace}
-  .pulse{animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-  @keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  .slide-in{animation:slideIn .3s ease forwards}
-`;
+const todayStr = () => new Date().toISOString().split("T")[0];
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const today = () => new Date().toISOString().split("T")[0];
-const useLS = (key, def) => {
-  const [v, setV] = useState(() => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : def; } catch { return def; } });
-  const save = useCallback((val) => { const next = typeof val === "function" ? val(v) : val; setV(next); localStorage.setItem(key, JSON.stringify(next)); }, [key, v]);
-  return [v, save];
-};
+function useLS(key, def) {
+  const [v,setV] = useState(()=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):def;}catch{return def;}});
+  const save = useCallback((val)=>{const next=typeof val==="function"?val(v):val;setV(next);localStorage.setItem(key,JSON.stringify(next));},[key,v]);
+  return [v,save];
+}
 
-const Card = ({ children, style = {}, className = "" }) => (
-  <div className={`slide-in ${className}`} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, ...style }}>{children}</div>
-);
-const CardTitle = ({ icon, title, color = C.accent }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-    <span style={{ color, fontSize: 16 }}>{icon}</span>
-    <span style={{ fontSize: 13, fontWeight: 700, color, letterSpacing: ".08em", textTransform: "uppercase" }}>{title}</span>
-  </div>
-);
-const Pill = ({ children, color = C.accent }) => (
-  <span style={{ background: color + "22", color, border: `1px solid ${color}44`, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600 }}>{children}</span>
-);
-const ProgressBar = ({ value, max = 100, color = C.accent, label, showPct = true }) => (
-  <div style={{ marginBottom: 8 }}>
-    {label && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-      <span style={{ fontSize: 12, color: C.muted }}>{label}</span>
-      {showPct && <span style={{ fontSize: 12, color, fontFamily: "JetBrains Mono" }}>{Math.round((value / max) * 100)}%</span>}
-    </div>}
-    <div style={{ background: C.dim, borderRadius: 4, height: 6, overflow: "hidden" }}>
-      <div style={{ width: `${Math.min((value / max) * 100, 100)}%`, background: color, height: "100%", borderRadius: 4, transition: "width .5s ease" }} />
-    </div>
-  </div>
-);
-const Btn = ({ onClick, children, color = C.accent, outline = false, style = {} }) => (
-  <button onClick={onClick} style={{ background: outline ? "transparent" : color, color: outline ? color : "#000", border: `1px solid ${color}`, borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, ...style }}>
-    {children}
-  </button>
-);
+function calcScore(r,j){
+  let s=0,max=0;
+  const add=(val,pts)=>{max+=pts;if(val)s+=pts;};
+  add(r.prayer,10);add(r.bibleReading,10);add(r.gratitude,5);
+  add(r.weights||r.cardio,15);add(r.drinkWater,5);add(r.makeBed,3);
+  add(r.noSocialMedia,7);add(j&&j.proteinGoal,10);add(j&&j.caloriesGoal,5);
+  add((j&&j.tradingHours||0)>=1,10);add((j&&j.chineseHours||0)>=1,10);
+  add(j&&(j.sleepQuality||0)>=7,5);add(r.reflection,5);
+  return max>0?Math.round((s/max)*100):0;
+}
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// ── UI ATOMS ──
+const Card=({children,style={},className=""})=>React.createElement("div",{className:"slide-in "+className,style:{background:C.card,border:"1px solid "+C.border,borderRadius:12,padding:20,...style}},children);
+const CT=({icon,title,color=C.accent})=>React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16}},[
+  React.createElement("span",{key:"i",style:{color,fontSize:16}},icon),
+  React.createElement("span",{key:"t",style:{fontSize:13,fontWeight:700,color,letterSpacing:".08em",textTransform:"uppercase"}},title)
+]);
+const Pill=({children,color=C.accent})=>React.createElement("span",{style:{background:color+"22",color,border:"1px solid "+color+"44",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600}},children);
+const PBar=({value,max=100,color=C.accent,label,showPct=true})=>React.createElement("div",{style:{marginBottom:8}},[
+  label&&React.createElement("div",{key:"lbl",style:{display:"flex",justifyContent:"space-between",marginBottom:4}},[
+    React.createElement("span",{key:"l",style:{fontSize:12,color:C.muted}},label),
+    showPct&&React.createElement("span",{key:"p",style:{fontSize:12,color,fontFamily:"JetBrains Mono"}},Math.round((value/max)*100)+"%")
+  ]),
+  React.createElement("div",{key:"track",style:{background:C.dim,borderRadius:4,height:6,overflow:"hidden"}},
+    React.createElement("div",{style:{width:Math.min((value/max)*100,100)+"%",background:color,height:"100%",borderRadius:4,transition:"width .5s ease"}})
+  )
+]);
+const Btn=({onClick,children,color=C.accent,style={}})=>React.createElement("button",{onClick,style:{background:color,color:"#000",border:"1px solid "+color,borderRadius:7,padding:"8px 16px",fontSize:12,fontWeight:700,...style}},children);
 
-// ─── SECTIONS ─────────────────────────────────────────────────────────────────
-
-function DashboardHome({ journal, routine, fitness, trading, goals }) {
-  const todayKey = today();
-  const todayJournal = journal[todayKey] || {};
-  const todayRoutine = routine[todayKey] || {};
-  const score = calcDailyScore(todayRoutine, todayJournal);
-  const scoreColor = score >= 90 ? C.green : score >= 75 ? C.accent : score >= 60 ? C.yellow : C.red;
-  const scoreLabel = score >= 90 ? "EXCELLENT" : score >= 75 ? "GOOD" : score >= 60 ? "AVERAGE" : "POOR";
-
-  const recentDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    const k = d.toISOString().split("T")[0];
-    return { name: DAYS[d.getDay()], score: calcDailyScore(routine[k] || {}, journal[k] || {}) };
+// ── DASHBOARD ──
+function DashboardHome({journal,routine,goals}){
+  const k=todayStr();
+  const j=journal[k]||{};const r=routine[k]||{};
+  const score=calcScore(r,j);
+  const sc=score>=90?C.green:score>=75?C.accent:score>=60?C.yellow:C.red;
+  const sl=score>=90?"EXCELLENT":score>=75?"GOOD":score>=60?"AVERAGE":"POOR";
+  const week=Array.from({length:7},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-(6-i));
+    const dk=d.toISOString().split("T")[0];
+    return{name:DAYS[d.getDay()],score:calcScore(routine[dk]||{},journal[dk]||{})};
   });
-
-  const timeData = [
-    { name: "Trading", hours: todayJournal.tradingHours || 0, color: C.gold },
-    { name: "Chinese", hours: todayJournal.chineseHours || 0, color: C.accent },
-    { name: "English", hours: todayJournal.englishHours || 0, color: C.purple },
-    { name: "AI/Biz", hours: todayJournal.aiHours || 0, color: C.green },
-    { name: "Workout", hours: todayJournal.workoutHours || 0, color: C.red },
-    { name: "Social", hours: todayJournal.socialHours || 0, color: C.muted },
-  ].filter(d => d.hours > 0).sort((a, b) => b.hours - a.hours);
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      {/* Daily Score */}
-      <Card style={{ gridColumn: "1/-1", background: `linear-gradient(135deg,${C.card},${C.surface})` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 4 }}>Today's Life Score — {todayKey}</div>
-            <div style={{ fontSize: 72, fontWeight: 800, color: scoreColor, lineHeight: 1, fontFamily: "JetBrains Mono" }}>{score}</div>
-            <Pill color={scoreColor}>{scoreLabel}</Pill>
-          </div>
-          <div style={{ flex: 1, minWidth: 200, height: 80 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={recentDays}><Line type="monotone" dataKey="score" stroke={C.accent} strokeWidth={2} dot={false} /><XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }} /></LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </Card>
-
-      {/* Motivation */}
-      <Card style={{ background: `linear-gradient(135deg,#0d1117,#161a22)`, border: `1px solid ${C.gold}33` }}>
-        <CardTitle icon="✦" title="My Vision" color={C.gold} />
-        <div style={{ fontSize: 13, color: C.text, lineHeight: 1.8 }}>
-          {["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map(v => (
-            <div key={v} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <span style={{ color: C.gold }}>→</span> {v}
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 16, padding: "12px 16px", background: C.gold + "11", borderLeft: `3px solid ${C.gold}`, borderRadius: 4 }}>
-          <div style={{ fontSize: 12, color: C.gold, fontStyle: "italic" }}>"Am I becoming the person I said I wanted to become?"</div>
-        </div>
-      </Card>
-
-      {/* Time Dashboard */}
-      <Card>
-        <CardTitle icon="⏱" title="Time Today" color={C.accent} />
-        {timeData.length === 0 ? <div style={{ color: C.muted, fontSize: 12 }}>No time logged yet today. Update your Daily Journal.</div> : (
-          <>
-            {timeData.map((d, i) => (
-              <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 24, fontSize: 11, color: C.muted, fontFamily: "JetBrains Mono" }}>#{i + 1}</div>
-                <div style={{ flex: 1, fontSize: 13 }}>{d.name}</div>
-                <div style={{ fontFamily: "JetBrains Mono", fontSize: 12, color: d.color, minWidth: 48, textAlign: "right" }}>{d.hours}h</div>
-                <div style={{ width: 80, background: C.dim, borderRadius: 3, height: 5 }}>
-                  <div style={{ width: `${(d.hours / (timeData[0]?.hours || 1)) * 100}%`, background: d.color, height: "100%", borderRadius: 3 }} />
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-      </Card>
-
-      {/* Goal Progress */}
-      <Card>
-        <CardTitle icon="🎯" title="2026 Goals" color={C.green} />
-        {[
-          { label: "Six Pack", val: goals.sixpack || 0, color: C.red },
-          { label: "$100K Funded", val: goals.funded || 0, color: C.gold },
-          { label: "$10K Withdrawal", val: goals.withdrawal || 0, color: C.green },
-          { label: "HSK 5/6", val: goals.hsk || 0, color: C.accent },
-          { label: "Bible Reading", val: goals.bible || 0, color: C.purple },
-        ].map(g => <ProgressBar key={g.label} label={g.label} value={g.val} max={100} color={g.color} />)}
-      </Card>
-
-      {/* Quick Fears Reminder */}
-      <Card style={{ border: `1px solid ${C.red}33` }}>
-        <CardTitle icon="⚡" title="Remember Your Fears" color={C.red} />
-        {["Wasting my potential","Being lazy","Financial failure","Emotional trading","Not reaching my goals","Drifting from God"].map(f => (
-          <div key={f} style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12, color: C.muted }}>
-            <span style={{ color: C.red }}>▸</span> {f}
-          </div>
-        ))}
-      </Card>
-    </div>
-  );
+  const times=[
+    {name:"Trading",hours:j.tradingHours||0,color:C.gold},
+    {name:"Chinese",hours:j.chineseHours||0,color:C.accent},
+    {name:"English",hours:j.englishHours||0,color:C.purple},
+    {name:"AI/Biz",hours:j.aiHours||0,color:C.green},
+    {name:"Workout",hours:j.workoutHours||0,color:C.red},
+    {name:"Social",hours:j.socialHours||0,color:C.muted},
+  ].filter(d=>d.hours>0).sort((a,b)=>b.hours-a.hours);
+  const GOALS=[
+    {key:"sixpack",label:"Six Pack",color:C.red},
+    {key:"funded",label:"$100K Funded",color:C.gold},
+    {key:"withdrawal",label:"$10K Withdrawal",color:C.green},
+    {key:"hsk",label:"HSK 5/6",color:C.accent},
+    {key:"bible",label:"Closer to God",color:C.purple},
+  ];
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    // Score card
+    React.createElement(Card,{key:"score",style:{gridColumn:"1/-1",background:"linear-gradient(135deg,"+C.card+","+C.surface+")"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16}},[
+        React.createElement("div",{key:"left"},[
+          React.createElement("div",{key:"lbl",style:{fontSize:11,color:C.muted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:4}},"Today's Life Score — "+k),
+          React.createElement("div",{key:"num",style:{fontSize:72,fontWeight:800,color:sc,lineHeight:1,fontFamily:"JetBrains Mono"}},score),
+          React.createElement(Pill,{key:"pill",color:sc},sl)
+        ]),
+        React.createElement("div",{key:"chart",style:{flex:1,minWidth:200,height:80}},
+          React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
+            React.createElement(LineChart,{data:week},[
+              React.createElement(Line,{key:"l",type:"monotone",dataKey:"score",stroke:C.accent,strokeWidth:2,dot:false}),
+              React.createElement(XAxis,{key:"x",dataKey:"name",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
+              React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
+            ])
+          )
+        )
+      ])
+    ),
+    // Vision
+    React.createElement(Card,{key:"vision",style:{background:"linear-gradient(135deg,#0d1117,#161a22)",border:"1px solid "+C.gold+"33"}},
+      [React.createElement(CT,{key:"ct",icon:"✦",title:"My Vision",color:C.gold}),
+      React.createElement("div",{key:"list",style:{fontSize:13,lineHeight:1.8}},
+        ["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map(v=>
+          React.createElement("div",{key:v,style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},[
+            React.createElement("span",{key:"a",style:{color:C.gold}},"→"),v
+          ])
+        )
+      ),
+      React.createElement("div",{key:"quote",style:{marginTop:16,padding:"12px 16px",background:C.gold+"11",borderLeft:"3px solid "+C.gold,borderRadius:4,fontSize:12,color:C.gold,fontStyle:"italic"}},
+        '"Am I becoming the person I said I wanted to become?"'
+      )]
+    ),
+    // Time today
+    React.createElement(Card,{key:"time"},
+      [React.createElement(CT,{key:"ct",icon:"⏱",title:"Time Today",color:C.accent}),
+      times.length===0?
+        React.createElement("div",{key:"empty",style:{color:C.muted,fontSize:12}},"No time logged yet. Update your Journal."):
+        times.map((d,i)=>
+          React.createElement("div",{key:d.name,style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},[
+            React.createElement("div",{key:"n",style:{width:24,fontSize:11,color:C.muted,fontFamily:"JetBrains Mono"}},"#"+(i+1)),
+            React.createElement("div",{key:"nm",style:{flex:1,fontSize:13}},d.name),
+            React.createElement("div",{key:"h",style:{fontFamily:"JetBrains Mono",fontSize:12,color:d.color,minWidth:48,textAlign:"right"}},d.hours+"h"),
+            React.createElement("div",{key:"bar",style:{width:80,background:C.dim,borderRadius:3,height:5}},
+              React.createElement("div",{style:{width:(d.hours/(times[0]?.hours||1))*100+"%",background:d.color,height:"100%",borderRadius:3}})
+            )
+          ])
+        )
+      ]
+    ),
+    // Goals
+    React.createElement(Card,{key:"goals"},
+      [React.createElement(CT,{key:"ct",icon:"🎯",title:"2026 Goals",color:C.green}),
+      GOALS.map(g=>React.createElement(PBar,{key:g.key,label:g.label,value:goals[g.key]||0,max:100,color:g.color}))
+      ]
+    ),
+    // Fears
+    React.createElement(Card,{key:"fears",style:{border:"1px solid "+C.red+"33"}},
+      [React.createElement(CT,{key:"ct",icon:"⚡",title:"Remember Your Fears",color:C.red}),
+      ["Wasting my potential","Being lazy","Financial failure","Emotional trading","Not reaching my goals","Drifting from God"].map(f=>
+        React.createElement("div",{key:f,style:{display:"flex",gap:8,marginBottom:6,fontSize:12,color:C.muted}},[
+          React.createElement("span",{key:"a",style:{color:C.red}},"▸"),f
+        ])
+      )]
+    )
+  ]);
 }
 
-function calcDailyScore(r, j) {
-  let s = 0, max = 0;
-  const add = (val, pts) => { max += pts; if (val) s += pts; };
-  add(r.prayer, 10); add(r.bibleReading, 10); add(r.gratitude, 5);
-  add(r.weights || r.cardio, 15); add(r.drinkWater, 5); add(r.makeBed, 3);
-  add(r.noSocialMedia, 7); add(j?.proteinGoal, 10); add(j?.caloriesGoal, 5);
-  add((j?.tradingHours || 0) >= 1, 10); add((j?.chineseHours || 0) >= 1, 10);
-  add(j?.sleepQuality >= 7, 5); add(r.reflection, 5);
-  return max > 0 ? Math.round((s / max) * 100) : 0;
-}
-
-// ─── ROUTINE ──────────────────────────────────────────────────────────────────
-const ROUTINE_ITEMS = [
-  { time: "06:30", label: "Wake Up", items: [{ key: "drinkWater", label: "Drink Water" }, { key: "makeBed", label: "Make Bed" }, { key: "noSocialMedia", label: "No Social Media" }] },
-  { time: "06:40", label: "God Time", items: [{ key: "prayer", label: "Prayer" }, { key: "bibleReading", label: "Bible Reading" }, { key: "gratitude", label: "Gratitude" }] },
-  { time: "07:00", label: "Workout", items: [{ key: "weights", label: "Weights" }, { key: "cardio", label: "Cardio" }] },
-  { time: "08:00", label: "Breakfast", items: [{ key: "healthyBreakfast", label: "Healthy Breakfast" }] },
-  { time: "09:00", label: "Trading Study", items: [{ key: "tradingStudy", label: "Trading Study" }] },
-  { time: "13:00", label: "Language", items: [{ key: "chineseStudy", label: "Chinese Study" }, { key: "englishStudy", label: "English Study" }] },
-  { time: "15:00", label: "Learning", items: [{ key: "aiLearning", label: "AI Learning" }, { key: "businessLearning", label: "Business Learning" }] },
-  { time: "17:00", label: "Walking", items: [{ key: "walking", label: "Walking" }] },
-  { time: "21:00", label: "Night", items: [{ key: "reflection", label: "Reflection" }, { key: "nightPrayer", label: "Night Prayer" }] },
-  { time: "22:00", label: "Sleep", items: [{ key: "sleep", label: "Sleep on time" }] },
+// ── ROUTINE ──
+const ROUTINE=[
+  {time:"06:30",label:"Wake Up",items:[{key:"drinkWater",label:"Drink Water"},{key:"makeBed",label:"Make Bed"},{key:"noSocialMedia",label:"No Social Media"}]},
+  {time:"06:40",label:"God Time",items:[{key:"prayer",label:"Prayer"},{key:"bibleReading",label:"Bible Reading"},{key:"gratitude",label:"Gratitude"}]},
+  {time:"07:00",label:"Workout",items:[{key:"weights",label:"Weights"},{key:"cardio",label:"Cardio"}]},
+  {time:"08:00",label:"Breakfast",items:[{key:"healthyBreakfast",label:"Healthy Breakfast"}]},
+  {time:"09:00",label:"Trading Study",items:[{key:"tradingStudy",label:"Trading Study"}]},
+  {time:"13:00",label:"Language",items:[{key:"chineseStudy",label:"Chinese Study"},{key:"englishStudy",label:"English Study"}]},
+  {time:"15:00",label:"Learning",items:[{key:"aiLearning",label:"AI Learning"},{key:"businessLearning",label:"Business Learning"}]},
+  {time:"17:00",label:"Walking",items:[{key:"walking",label:"Walking"}]},
+  {time:"21:00",label:"Night",items:[{key:"reflection",label:"Reflection"},{key:"nightPrayer",label:"Night Prayer"}]},
+  {time:"22:00",label:"Sleep",items:[{key:"sleep",label:"Sleep on time"}]},
 ];
 
-function RoutinePage({ routine, setRoutine }) {
-  const key = today();
-  const todayR = routine[key] || {};
-  const toggle = (k) => setRoutine(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [k]: !((prev[key] || {})[k]) } }));
-  const total = Object.values(ROUTINE_ITEMS).flatMap(s => s.items).length;
-  const done = Object.values(ROUTINE_ITEMS).flatMap(s => s.items).filter(i => todayR[i.key]).length;
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: ".08em" }}>Today's Routine</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: C.accent, fontFamily: "JetBrains Mono" }}>{done}/{total} <span style={{ fontSize: 14, color: C.muted }}>completed</span></div>
-          </div>
-          <div style={{ width: 120, height: 60 }}>
-            <ProgressBar value={done} max={total} color={done === total ? C.green : C.accent} showPct />
-          </div>
-        </div>
-      </Card>
-      {ROUTINE_ITEMS.map(block => (
-        <Card key={block.time}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <div style={{ background: C.accent + "22", color: C.accent, padding: "3px 8px", borderRadius: 5, fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 600 }}>{block.time}</div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{block.label}</div>
-          </div>
-          {block.items.map(item => (
-            <label key={item.key} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 8, textTransform: "none", letterSpacing: 0 }}>
-              <input type="checkbox" checked={!!todayR[item.key]} onChange={() => toggle(item.key)} style={{ width: 16, height: 16, accentColor: C.accent }} />
-              <span style={{ fontSize: 13, color: todayR[item.key] ? C.green : C.text }}>{item.label}</span>
-              {todayR[item.key] && <span style={{ fontSize: 11, color: C.green }}>✓</span>}
-            </label>
-          ))}
-        </Card>
-      ))}
-    </div>
-  );
+function RoutinePage({routine,setRoutine}){
+  const k=todayStr();const r=routine[k]||{};
+  const toggle=f=>setRoutine(p=>({...p,[k]:{...(p[k]||{}),[f]:!((p[k]||{})[f])}}));
+  const all=ROUTINE.flatMap(s=>s.items);
+  const done=all.filter(i=>r[i.key]).length;
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"hdr",style:{gridColumn:"1/-1"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},[
+        React.createElement("div",{key:"info"},[
+          React.createElement("div",{key:"sub",style:{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}},"Today's Routine"),
+          React.createElement("div",{key:"num",style:{fontSize:28,fontWeight:800,color:C.accent,fontFamily:"JetBrains Mono"}},done+"/"+all.length+" ",React.createElement("span",{style:{fontSize:14,color:C.muted}},"completed"))
+        ]),
+        React.createElement("div",{key:"pb",style:{width:140}},React.createElement(PBar,{value:done,max:all.length,color:done===all.length?C.green:C.accent}))
+      ])
+    ),
+    ...ROUTINE.map(block=>
+      React.createElement(Card,{key:block.time},
+        [React.createElement("div",{key:"hd",style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},[
+          React.createElement("div",{key:"t",style:{background:C.accent+"22",color:C.accent,padding:"3px 8px",borderRadius:5,fontFamily:"JetBrains Mono",fontSize:11,fontWeight:600}},block.time),
+          React.createElement("div",{key:"l",style:{fontSize:13,fontWeight:700}},block.label)
+        ]),
+        ...block.items.map(item=>
+          React.createElement("label",{key:item.key,style:{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:8,textTransform:"none",letterSpacing:0}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!r[item.key],onChange:()=>toggle(item.key),style:{accentColor:C.accent}}),
+            React.createElement("span",{key:"lbl",style:{fontSize:13,color:r[item.key]?C.green:C.text}},item.label),
+            r[item.key]&&React.createElement("span",{key:"ck",style:{fontSize:11,color:C.green}},"✓")
+          ])
+        )]
+      )
+    )
+  ]);
 }
 
-// ─── DAILY JOURNAL ────────────────────────────────────────────────────────────
-function DailyJournalPage({ journal, setJournal }) {
-  const key = today();
-  const entry = journal[key] || {};
-  const set = (field, val) => setJournal(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [field]: val } }));
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="📔" title="Daily Journal" color={C.accent} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-          {[["wakeUp","Wake Up Time","time"],["sleepTime","Planned Sleep Time","time"]].map(([f, l, t]) => (
-            <div key={f}><label>{l}</label><input type={t} value={entry[f] || ""} onChange={e => set(f, e.target.value)} /></div>
-          ))}
-          <div>
-            <label>Mood (1-10)</label>
-            <input type="range" min="1" max="10" value={entry.mood || 5} onChange={e => set("mood", +e.target.value)} style={{ padding: 0, border: "none", background: "transparent", accentColor: C.accent }} />
-            <div style={{ textAlign: "center", color: C.accent, fontFamily: "JetBrains Mono", fontSize: 13 }}>{entry.mood || 5}/10</div>
-          </div>
-          <div>
-            <label>Energy Level (1-10)</label>
-            <input type="range" min="1" max="10" value={entry.energy || 5} onChange={e => set("energy", +e.target.value)} style={{ padding: 0, border: "none", background: "transparent", accentColor: C.gold }} />
-            <div style={{ textAlign: "center", color: C.gold, fontFamily: "JetBrains Mono", fontSize: 13 }}>{entry.energy || 5}/10</div>
-          </div>
-          <div>
-            <label>Sleep Quality (1-10)</label>
-            <input type="range" min="1" max="10" value={entry.sleepQuality || 5} onChange={e => set("sleepQuality", +e.target.value)} style={{ padding: 0, border: "none", background: "transparent", accentColor: C.purple }} />
-            <div style={{ textAlign: "center", color: C.purple, fontFamily: "JetBrains Mono", fontSize: 13 }}>{entry.sleepQuality || 5}/10</div>
-          </div>
-        </div>
-      </Card>
-
-      {[
-        ["todayWins", "🏆 Today's Wins", C.green],
-        ["todayMistakes", "⚠️ Today's Mistakes", C.red],
-        ["lessonsLearned", "💡 Lessons Learned", C.gold],
-        ["tomorrowFocus", "🎯 Tomorrow's Focus", C.accent],
-      ].map(([f, l, c]) => (
-        <Card key={f}>
-          <CardTitle icon={l.split(" ")[0]} title={l.split(" ").slice(1).join(" ")} color={c} />
-          <textarea value={entry[f] || ""} onChange={e => set(f, e.target.value)} placeholder={`Write here...`} />
-        </Card>
-      ))}
-
-      <Card>
-        <CardTitle icon="⏱" title="Time Tracker" color={C.accent} />
-        {[["tradingHours","Trading Hours"],["chineseHours","Chinese Study (hrs)"],["englishHours","English Study (hrs)"],["aiHours","AI/Business (hrs)"],["workoutHours","Workout (hrs)"],["socialHours","Social Media (hrs)"]].map(([f, l]) => (
-          <div key={f} style={{ marginBottom: 10 }}>
-            <label>{l}</label>
-            <input type="number" min="0" max="24" step="0.25" value={entry[f] || ""} onChange={e => set(f, +e.target.value)} />
-          </div>
-        ))}
-      </Card>
-
-      <Card>
-        <CardTitle icon="🥗" title="Nutrition Goals" color={C.green} />
-        {[["protein","Protein (g)"],["calories","Calories"],["water","Water (L)"]].map(([f, l]) => (
-          <div key={f} style={{ marginBottom: 10 }}>
-            <label>{l}</label>
-            <input type="number" min="0" value={entry[f] || ""} onChange={e => set(f, +e.target.value)} />
-          </div>
-        ))}
-        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-          {[["proteinGoal","Protein Goal ✓"],["caloriesGoal","Calories Goal ✓"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", textTransform: "none", letterSpacing: 0, flex: 1 }}>
-              <input type="checkbox" checked={!!entry[f]} onChange={e => set(f, e.target.checked)} style={{ accentColor: C.green, width: 16, height: 16 }} />
-              <span style={{ fontSize: 12, color: entry[f] ? C.green : C.muted }}>{l}</span>
-            </label>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
+// ── DAILY JOURNAL ──
+function JournalPage({journal,setJournal}){
+  const k=todayStr();const e=journal[k]||{};
+  const set=(f,v)=>setJournal(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"top",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"📔",title:"Daily Journal",color:C.accent}),
+      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}},
+        [["wakeUp","Wake Up Time","time"],["sleepTime","Planned Sleep","time"]].map(([f,l,t])=>
+          React.createElement("div",{key:f},[
+            React.createElement("label",{key:"lbl"},l),
+            React.createElement("input",{key:"inp",type:t,value:e[f]||"",onChange:ev=>set(f,ev.target.value)})
+          ])
+        ).concat([
+          React.createElement("div",{key:"mood"},[
+            React.createElement("label",{key:"l"},"Mood (1-10)"),
+            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.mood||5,onChange:ev=>set("mood",+ev.target.value),style:{accentColor:C.accent}}),
+            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.accent,fontFamily:"JetBrains Mono",fontSize:13}},(e.mood||5)+"/10")
+          ]),
+          React.createElement("div",{key:"energy"},[
+            React.createElement("label",{key:"l"},"Energy (1-10)"),
+            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.energy||5,onChange:ev=>set("energy",+ev.target.value),style:{accentColor:C.gold}}),
+            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.gold,fontFamily:"JetBrains Mono",fontSize:13}},(e.energy||5)+"/10")
+          ]),
+          React.createElement("div",{key:"sleep"},[
+            React.createElement("label",{key:"l"},"Sleep Quality (1-10)"),
+            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.sleepQuality||5,onChange:ev=>set("sleepQuality",+ev.target.value),style:{accentColor:C.purple}}),
+            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.purple,fontFamily:"JetBrains Mono",fontSize:13}},(e.sleepQuality||5)+"/10")
+          ])
+        ])
+      )]
+    ),
+    ...[["todayWins","🏆 Today's Wins",C.green],["todayMistakes","⚠️ Today's Mistakes",C.red],["lessonsLearned","💡 Lessons Learned",C.gold],["tomorrowFocus","🎯 Tomorrow's Focus",C.accent]].map(([f,l,c])=>
+      React.createElement(Card,{key:f},[
+        React.createElement(CT,{key:"ct",icon:l.split(" ")[0],title:l.split(" ").slice(1).join(" "),color:c}),
+        React.createElement("textarea",{key:"ta",value:e[f]||"",onChange:ev=>set(f,ev.target.value),placeholder:"Write here..."})
+      ])
+    ),
+    React.createElement(Card,{key:"time"},
+      [React.createElement(CT,{key:"ct",icon:"⏱",title:"Time Tracker",color:C.accent}),
+      ...[["tradingHours","Trading Hours"],["chineseHours","Chinese (hrs)"],["englishHours","English (hrs)"],["aiHours","AI/Business (hrs)"],["workoutHours","Workout (hrs)"],["socialHours","Social Media (hrs)"]].map(([f,l])=>
+        React.createElement("div",{key:f,style:{marginBottom:10}},[
+          React.createElement("label",{key:"lbl"},l),
+          React.createElement("input",{key:"inp",type:"number",min:0,max:24,step:0.25,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})
+        ])
+      )]
+    ),
+    React.createElement(Card,{key:"nut"},
+      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Nutrition",color:C.green}),
+      ...[["protein","Protein (g)"],["calories","Calories"],["water","Water (L)"]].map(([f,l])=>
+        React.createElement("div",{key:f,style:{marginBottom:10}},[
+          React.createElement("label",{key:"l"},l),
+          React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})
+        ])
+      ),
+      React.createElement("div",{key:"checks",style:{display:"flex",gap:12,marginTop:8}},
+        [["proteinGoal","Protein Goal ✓"],["caloriesGoal","Calories Goal ✓"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,flex:1}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.green}}),
+            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.green:C.muted}},l)
+          ])
+        )
+      )]
+    )
+  ]);
 }
 
-// ─── FOOD JOURNAL ─────────────────────────────────────────────────────────────
-function FoodJournalPage({ food, setFood }) {
-  const key = today();
-  const entry = food[key] || {};
-  const set = (f, v) => setFood(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [f]: v } }));
+// ── FOOD JOURNAL ──
+function FoodPage({food,setFood}){
+  const k=todayStr();const e=food[k]||{};
+  const set=(f,v)=>setFood(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
+  const nc=e.proteinGoal&&e.caloriesGoal&&(e.healthyMeals||0)>=3?{color:C.green,label:"🟢 Great Nutrition Day"}:
+           e.proteinGoal||e.caloriesGoal?{color:C.yellow,label:"🟡 Average Nutrition Day"}:{color:C.red,label:"🔴 Poor Nutrition Day"};
+  const handlePhoto=(meal,file)=>{if(!file)return;const r=new FileReader();r.onload=ev=>set(meal+"Photo",ev.target.result);r.readAsDataURL(file);};
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"hdr",style:{gridColumn:"1/-1"}},
+      [React.createElement("div",{key:"top",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},[
+        React.createElement(CT,{key:"ct",icon:"🍽️",title:"Food Journal",color:C.green}),
+        React.createElement(Pill,{key:"pill",color:nc.color},nc.label)
+      ]),
+      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:12}},
+        [["protein","Protein (g)"],["calories","Calories"],["water","Water (L)"],["healthyMeals","Healthy Meals"]].map(([f,l])=>
+          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+        )
+      ),
+      React.createElement("div",{key:"checks",style:{display:"flex",gap:16,marginTop:12}},
+        [["proteinGoal","Protein Goal"],["caloriesGoal","Calories Goal"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:8,cursor:"pointer",textTransform:"none",letterSpacing:0}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.green}}),
+            React.createElement("span",{key:"s",style:{fontSize:13,color:e[f]?C.green:C.muted}},l+": "),
+            React.createElement("strong",{key:"v",style:{color:e[f]?C.green:C.red}},e[f]?"YES":"NO")
+          ])
+        )
+      )]
+    ),
+    ...[["breakfast","🌅 Breakfast",C.gold],["lunch","☀️ Lunch",C.accent],["dinner","🌙 Dinner",C.purple],["snacks","🍎 Snacks",C.green]].map(([meal,label,color])=>
+      React.createElement(Card,{key:meal},[
+        React.createElement(CT,{key:"ct",icon:label.split(" ")[0],title:label.split(" ")[1],color}),
+        React.createElement("textarea",{key:"ta",placeholder:"What did you eat?",value:e[meal]||"",onChange:ev=>set(meal,ev.target.value)}),
+        React.createElement("div",{key:"photo",style:{marginTop:10}},[
+          React.createElement("label",{key:"l"},"Photo"),
+          React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>handlePhoto(meal,ev.target.files[0])}),
+          e[meal+"Photo"]&&React.createElement("img",{key:"img",src:e[meal+"Photo"],style:{width:"100%",borderRadius:8,marginTop:8,maxHeight:180,objectFit:"cover"}})
+        ])
+      ])
+    ),
+    React.createElement(Card,{key:"notes"},
+      [React.createElement(CT,{key:"ct",icon:"📝",title:"Daily Notes",color:C.muted}),
+      React.createElement("textarea",{key:"ta",placeholder:"How did you feel? Cravings? Notes...",value:e.notes||"",onChange:ev=>set("notes",ev.target.value),style:{minHeight:100}})]
+    )
+  ]);
+}
 
-  const nutritionColor = () => {
-    if (entry.proteinGoal && entry.caloriesGoal && entry.healthyMeals >= 3) return { color: C.green, label: "🟢 Great Nutrition Day" };
-    if (entry.proteinGoal || entry.caloriesGoal) return { color: C.yellow, label: "🟡 Average Nutrition Day" };
-    return { color: C.red, label: "🔴 Poor Nutrition Day" };
+// ── FITNESS ──
+function FitnessPage({fitness,setFitness}){
+  const k=todayStr();const e=fitness[k]||{};
+  const set=(f,v)=>setFitness(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
+  const hist=Object.entries(fitness).sort().slice(-8).map(([d,v])=>({date:d.slice(5),weight:v.weight||0}));
+  const handlePhoto=(file)=>{if(!file)return;const r=new FileReader();r.onload=ev=>set("progressPhoto",ev.target.result);r.readAsDataURL(file);};
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"stats",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"💪",title:"Body Stats",color:C.red}),
+      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:12}},
+        [["weight","Weight (kg)"],["bodyfat","Body Fat %"],["chest","Chest (cm)"],["waist","Waist (cm)"],["arms","Arms (cm)"]].map(([f,l])=>
+          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",step:0.1,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+        )
+      ),
+      React.createElement("div",{key:"sixpack",style:{marginTop:16}},[
+        React.createElement("label",{key:"l"},"Six Pack Progress"),
+        React.createElement("input",{key:"r",type:"range",min:0,max:100,value:e.sixpack||0,onChange:ev=>set("sixpack",+ev.target.value),style:{accentColor:C.red,width:"100%"}}),
+        React.createElement("div",{key:"vals",style:{display:"flex",justifyContent:"space-between",fontSize:11,color:C.muted}},[
+          React.createElement("span",{key:"s"},"Starting"),
+          React.createElement("span",{key:"v",style:{color:C.red,fontWeight:700,fontFamily:"JetBrains Mono"}},(e.sixpack||0)+"%"),
+          React.createElement("span",{key:"e"},"Six Pack ✓")
+        ])
+      ])]
+    ),
+    hist.length>1&&React.createElement(Card,{key:"chart",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"📈",title:"Weight History",color:C.accent}),
+      React.createElement("div",{key:"c",style:{height:150}},
+        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
+          React.createElement(LineChart,{data:hist},[
+            React.createElement(Line,{key:"l",type:"monotone",dataKey:"weight",stroke:C.accent,strokeWidth:2,dot:{fill:C.accent,r:3}}),
+            React.createElement(XAxis,{key:"x",dataKey:"date",tick:{fill:C.muted,fontSize:10},axisLine:false,tickLine:false}),
+            React.createElement(YAxis,{key:"y",tick:{fill:C.muted,fontSize:10},axisLine:false,tickLine:false,domain:["auto","auto"]}),
+            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
+          ])
+        )
+      )]
+    ),
+    React.createElement(Card,{key:"workout"},
+      [React.createElement(CT,{key:"ct",icon:"🏋️",title:"Today's Workout",color:C.gold}),
+      React.createElement("textarea",{key:"ta",placeholder:"Exercises, sets, reps, weights...",value:e.workoutLog||"",onChange:ev=>set("workoutLog",ev.target.value)}),
+      React.createElement("div",{key:"checks",style:{display:"flex",gap:10,marginTop:10}},
+        [["weights","Weights"],["cardio","Cardio"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.gold}}),
+            React.createElement("span",{key:"s",style:{fontSize:13}},l)
+          ])
+        )
+      )]
+    ),
+    React.createElement(Card,{key:"nut"},
+      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Nutrition",color:C.green}),
+      ...[["calories","Calories"],["protein","Protein (g)"],["water","Water (L)"]].map(([f,l])=>
+        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+      ),
+      React.createElement(PBar,{key:"pb1",label:"Protein Goal (150g)",value:e.protein||0,max:150,color:C.green}),
+      React.createElement(PBar,{key:"pb2",label:"Water Goal (3L)",value:(e.water||0)*33.3,max:100,color:C.accent})]
+    ),
+    React.createElement(Card,{key:"photo"},
+      [React.createElement(CT,{key:"ct",icon:"📸",title:"Progress Photo",color:C.purple}),
+      React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>handlePhoto(ev.target.files[0]),style:{marginBottom:10}}),
+      e.progressPhoto?
+        React.createElement("img",{key:"img",src:e.progressPhoto,style:{width:"100%",borderRadius:8,maxHeight:220,objectFit:"cover"}}):
+        React.createElement("div",{key:"ph",style:{height:120,background:C.dim,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:12}},"Upload Progress Photo")
+      ]
+    )
+  ]);
+}
+
+// ── TRADING ──
+function TradingPage({trades,setTrades}){
+  const emptyForm={date:todayStr(),pair:"",setup:"",entry:"",sl:"",tp:"",risk:"",result:"",emotion_before:"",emotion_after:"",lesson:"",mistake:""};
+  const [form,setForm]=useState(emptyForm);
+  const [img,setImg]=useState(null);
+  const submit=()=>{
+    if(!form.pair)return;
+    setTrades(p=>[...p,{...form,screenshot:img,id:Date.now()}]);
+    setForm(emptyForm);setImg(null);
   };
-  const nc = nutritionColor();
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <CardTitle icon="🍽️" title="Food Journal" color={C.green} />
-          <Pill color={nc.color}>{nc.label}</Pill>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
-          {[["protein","Protein (g)","0"],["calories","Calories","0"],["water","Water (L)","0"],["healthyMeals","Healthy Meals Count","0"]].map(([f,l,p]) => (
-            <div key={f}><label>{l}</label><input type="number" min="0" placeholder={p} value={entry[f] || ""} onChange={e => set(f, +e.target.value)} /></div>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
-          {[["proteinGoal","Protein Goal Reached"],["caloriesGoal","Calories Goal Reached"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", textTransform: "none", letterSpacing: 0 }}>
-              <input type="checkbox" checked={!!entry[f]} onChange={e => set(f, e.target.checked)} style={{ accentColor: C.green, width: 16, height: 16 }} />
-              <span style={{ fontSize: 13, color: entry[f] ? C.green : C.muted }}>{l}: <strong style={{ color: entry[f] ? C.green : C.red }}>{entry[f] ? "YES" : "NO"}</strong></span>
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      {[
-        ["breakfast", "🌅 Breakfast", C.gold],
-        ["lunch", "☀️ Lunch", C.accent],
-        ["dinner", "🌙 Dinner", C.purple],
-        ["snacks", "🍎 Snacks", C.green],
-      ].map(([meal, label, color]) => (
-        <Card key={meal}>
-          <CardTitle icon={label.split(" ")[0]} title={label.split(" ")[1]} color={color} />
-          <textarea placeholder={`What did you eat for ${label.split(" ")[1].toLowerCase()}?`} value={entry[meal] || ""} onChange={e => set(meal, e.target.value)} />
-          <div style={{ marginTop: 10 }}>
-            <label>Photo (upload)</label>
-            <input type="file" accept="image/*" style={{ fontSize: 11, padding: "6px 8px" }}
-              onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => set(meal + "Photo", ev.target.result); r.readAsDataURL(f); }} />
-            {entry[meal + "Photo"] && <img src={entry[meal + "Photo"]} alt={meal} style={{ width: "100%", borderRadius: 8, marginTop: 8, maxHeight: 180, objectFit: "cover" }} />}
-          </div>
-        </Card>
-      ))}
-
-      <Card>
-        <CardTitle icon="📝" title="Daily Food Notes" color={C.muted} />
-        <textarea placeholder="How did you feel? Any cravings? Notes about your diet today..." value={entry.notes || ""} onChange={e => set("notes", e.target.value)} style={{ minHeight: 100 }} />
-      </Card>
-    </div>
-  );
+  const wins=trades.filter(t=>t.result==="WIN").length;
+  const losses=trades.filter(t=>t.result==="LOSS").length;
+  const wr=trades.length>0?Math.round((wins/trades.length)*100):0;
+  const r7=trades.slice(-7);
+  const wr7=r7.length>0?Math.round((r7.filter(t=>t.result==="WIN").length/r7.length)*100):0;
+  const pie=[{name:"WIN",value:wins},{name:"LOSS",value:losses}];
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"stats"},
+      [React.createElement(CT,{key:"ct",icon:"📊",title:"Win Rate",color:C.gold}),
+      React.createElement("div",{key:"nums",style:{display:"flex",gap:20,alignItems:"center"}},[
+        React.createElement("div",{key:"all",style:{textAlign:"center"}},[
+          React.createElement("div",{key:"n",style:{fontSize:36,fontWeight:800,color:wr>=50?C.green:C.red,fontFamily:"JetBrains Mono"}},wr+"%"),
+          React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted,textTransform:"uppercase"}},"All Time")
+        ]),
+        React.createElement("div",{key:"w7",style:{textAlign:"center"}},[
+          React.createElement("div",{key:"n",style:{fontSize:36,fontWeight:800,color:wr7>=50?C.green:C.red,fontFamily:"JetBrains Mono"}},wr7+"%"),
+          React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted,textTransform:"uppercase"}},"Last 7")
+        ]),
+        trades.length>0&&React.createElement("div",{key:"pie",style:{flex:1,height:80}},
+          React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
+            React.createElement(PieChart,null,
+              React.createElement(Pie,{data:pie,cx:"50%",cy:"50%",innerRadius:25,outerRadius:38,dataKey:"value"},
+                pie.map((_,i)=>React.createElement(Cell,{key:i,fill:i===0?C.green:C.red}))
+              )
+            )
+          )
+        )
+      ]),
+      React.createElement("div",{key:"pills",style:{display:"flex",gap:12,marginTop:8}},[
+        React.createElement(Pill,{key:"w",color:C.green},"W: "+wins),
+        React.createElement(Pill,{key:"l",color:C.red},"L: "+losses),
+        React.createElement(Pill,{key:"t",color:C.muted},"Total: "+trades.length)
+      ])]
+    ),
+    React.createElement(Card,{key:"form",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"➕",title:"Log New Trade",color:C.accent}),
+      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}},
+        [["date","Date","date"],["pair","Pair","text"],["setup","Setup","text"],["entry","Entry","number"],["sl","Stop Loss","number"],["tp","Take Profit","number"],["risk","Risk %","number"]].map(([f,l,t])=>
+          React.createElement("div",{key:f},[
+            React.createElement("label",{key:"l"},l),
+            React.createElement("input",{key:"i",type:t,value:form[f],onChange:ev=>setForm(p=>({...p,[f]:ev.target.value}))})
+          ])
+        ).concat([
+          React.createElement("div",{key:"result"},[
+            React.createElement("label",{key:"l"},"Result"),
+            React.createElement("select",{key:"s",value:form.result,onChange:ev=>setForm(p=>({...p,result:ev.target.value})),style:{color:form.result==="WIN"?C.green:form.result==="LOSS"?C.red:C.text}},[
+              React.createElement("option",{key:"",value:""},"Select"),
+              React.createElement("option",{key:"w",value:"WIN"},"WIN"),
+              React.createElement("option",{key:"l",value:"LOSS"},"LOSS"),
+              React.createElement("option",{key:"b",value:"BE"},"BREAK EVEN")
+            ])
+          ]),
+          React.createElement("div",{key:"eb"},[React.createElement("label",{key:"l"},"Emotion Before"),React.createElement("input",{key:"i",value:form.emotion_before,onChange:ev=>setForm(p=>({...p,emotion_before:ev.target.value})),placeholder:"e.g. Calm"})]),
+          React.createElement("div",{key:"ea"},[React.createElement("label",{key:"l"},"Emotion After"),React.createElement("input",{key:"i",value:form.emotion_after,onChange:ev=>setForm(p=>({...p,emotion_after:ev.target.value})),placeholder:"e.g. Confident"})])
+        ])
+      ),
+      React.createElement("div",{key:"texts",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}},[
+        React.createElement("div",{key:"lesson"},[React.createElement("label",{key:"l"},"Lesson Learned"),React.createElement("textarea",{key:"t",value:form.lesson,onChange:ev=>setForm(p=>({...p,lesson:ev.target.value})),style:{minHeight:60}})]),
+        React.createElement("div",{key:"mistake"},[React.createElement("label",{key:"l"},"Mistakes Made"),React.createElement("textarea",{key:"t",value:form.mistake,onChange:ev=>setForm(p=>({...p,mistake:ev.target.value})),style:{minHeight:60}})])
+      ]),
+      React.createElement("div",{key:"ss",style:{marginTop:12}},[
+        React.createElement("label",{key:"l"},"Screenshot"),
+        React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev2=>setImg(ev2.target.result);r.readAsDataURL(f);}}),
+        img&&React.createElement("img",{key:"img",src:img,style:{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,marginTop:8}})
+      ]),
+      React.createElement(Btn,{key:"btn",onClick:submit,style:{marginTop:16}},"Log Trade")]
+    ),
+    ...trades.slice().reverse().slice(0,10).map(t=>
+      React.createElement(Card,{key:t.id,style:{border:"1px solid "+(t.result==="WIN"?C.green:t.result==="LOSS"?C.red:C.border)+"33"}},
+        [React.createElement("div",{key:"hd",style:{display:"flex",justifyContent:"space-between",marginBottom:8}},[
+          React.createElement("span",{key:"p",style:{fontWeight:700,fontSize:14}},t.pair),
+          React.createElement(Pill,{key:"pill",color:t.result==="WIN"?C.green:t.result==="LOSS"?C.red:C.muted},t.result||"—")
+        ]),
+        React.createElement("div",{key:"info",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12}},
+          [["Setup",t.setup],["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Risk",t.risk+"%"],["Date",t.date]].filter(([,v])=>v).map(([l,v])=>
+            React.createElement("div",{key:l},[
+              React.createElement("span",{key:"l",style:{color:C.muted}},l+": "),
+              React.createElement("span",{key:"v",style:{fontFamily:"JetBrains Mono"}},v)
+            ])
+          )
+        ),
+        t.lesson&&React.createElement("div",{key:"lesson",style:{marginTop:8,fontSize:12,color:C.gold}},"💡 "+t.lesson),
+        t.screenshot&&React.createElement("img",{key:"img",src:t.screenshot,style:{width:"100%",maxHeight:140,objectFit:"cover",borderRadius:6,marginTop:8}})
+        ]
+      )
+    )
+  ]);
 }
 
-// ─── FITNESS ──────────────────────────────────────────────────────────────────
-function FitnessPage({ fitness, setFitness }) {
-  const key = today();
-  const entry = fitness[key] || {};
-  const set = (f, v) => setFitness(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [f]: v } }));
-
-  const history = Object.entries(fitness).sort().slice(-8).map(([d, v]) => ({ date: d.slice(5), weight: v.weight || 0, bodyfat: v.bodyfat || 0 }));
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="💪" title="Six Pack Progress" color={C.red} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12 }}>
-          {[["weight","Weight (kg)"],["bodyfat","Body Fat %"],["chest","Chest (cm)"],["waist","Waist (cm)"],["arms","Arms (cm)"]].map(([f, l]) => (
-            <div key={f}><label>{l}</label><input type="number" step="0.1" value={entry[f] || ""} onChange={e => set(f, +e.target.value)} /></div>
-          ))}
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <label>Six Pack Progress (0-100)</label>
-          <input type="range" min="0" max="100" value={entry.sixpack || 0} onChange={e => set("sixpack", +e.target.value)} style={{ padding: 0, border: "none", background: "transparent", accentColor: C.red }} />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
-            <span>Starting</span>
-            <span style={{ color: C.red, fontWeight: 700, fontFamily: "JetBrains Mono" }}>{entry.sixpack || 0}%</span>
-            <span>Six Pack ✓</span>
-          </div>
-        </div>
-      </Card>
-
-      {history.length > 1 && (
-        <Card style={{ gridColumn: "1/-1" }}>
-          <CardTitle icon="📈" title="Weight History" color={C.accent} />
-          <div style={{ height: 150 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={history}><Line type="monotone" dataKey="weight" stroke={C.accent} strokeWidth={2} dot={{ fill: C.accent, r: 3 }} /><XAxis dataKey="date" tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false} domain={["auto","auto"]} /><Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }} /></LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      )}
-
-      <Card>
-        <CardTitle icon="🏋️" title="Today's Workout" color={C.gold} />
-        <textarea placeholder="Describe your workout (exercises, sets, reps, weights...)" value={entry.workoutLog || ""} onChange={e => set("workoutLog", e.target.value)} />
-        <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-          {[["weights","Weights"],["cardio","Cardio"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", textTransform: "none", letterSpacing: 0 }}>
-              <input type="checkbox" checked={!!entry[f]} onChange={e => set(f, e.target.checked)} style={{ accentColor: C.gold, width: 16, height: 16 }} />
-              <span style={{ fontSize: 13 }}>{l}</span>
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <CardTitle icon="🥗" title="Nutrition" color={C.green} />
-        {[["calories","Calories"],["protein","Protein (g)"],["water","Water (L)"]].map(([f, l]) => (
-          <div key={f} style={{ marginBottom: 10 }}><label>{l}</label><input type="number" min="0" value={entry[f] || ""} onChange={e => set(f, +e.target.value)} /></div>
-        ))}
-        <div style={{ marginTop: 8 }}>
-          <ProgressBar label="Protein Goal (150g)" value={entry.protein || 0} max={150} color={C.green} />
-          <ProgressBar label="Water Goal (3L)" value={(entry.water || 0) * 33.3} max={100} color={C.accent} />
-        </div>
-      </Card>
-
-      <Card>
-        <CardTitle icon="📸" title="Progress Photo" color={C.purple} />
-        <input type="file" accept="image/*" style={{ marginBottom: 10, fontSize: 11, padding: "6px 8px" }}
-          onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => set("progressPhoto", ev.target.result); r.readAsDataURL(f); }} />
-        {entry.progressPhoto && <img src={entry.progressPhoto} alt="Progress" style={{ width: "100%", borderRadius: 8, maxHeight: 220, objectFit: "cover" }} />}
-        {!entry.progressPhoto && <div style={{ height: 120, background: C.dim, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 12 }}>Upload Progress Photo</div>}
-      </Card>
-    </div>
-  );
-}
-
-// ─── TRADING JOURNAL ──────────────────────────────────────────────────────────
-function TradingPage({ trades, setTrades }) {
-  const [form, setForm] = useState({ date: today(), pair: "", setup: "", entry: "", sl: "", tp: "", risk: "", result: "", emotion_before: "", emotion_after: "", lesson: "", mistake: "" });
-  const [img, setImg] = useState(null);
-
-  const submit = () => {
-    if (!form.pair) return;
-    setTrades(prev => [...prev, { ...form, screenshot: img, id: Date.now() }]);
-    setForm({ date: today(), pair: "", setup: "", entry: "", sl: "", tp: "", risk: "", result: "", emotion_before: "", emotion_after: "", lesson: "", mistake: "" });
-    setImg(null);
-  };
-
-  const wins = trades.filter(t => t.result === "WIN").length;
-  const losses = trades.filter(t => t.result === "LOSS").length;
-  const wr = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0;
-
-  const recent7 = trades.slice(-7);
-  const w7 = recent7.filter(t => t.result === "WIN").length;
-  const wr7 = recent7.length > 0 ? Math.round((w7 / recent7.length) * 100) : 0;
-
-  const pieData = [{ name: "WIN", value: wins }, { name: "LOSS", value: losses }];
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      {/* Stats */}
-      <Card>
-        <CardTitle icon="📊" title="Win Rate" color={C.gold} />
-        <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 36, fontWeight: 800, color: wr >= 50 ? C.green : C.red, fontFamily: "JetBrains Mono" }}>{wr}%</div>
-            <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase" }}>All Time</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 36, fontWeight: 800, color: wr7 >= 50 ? C.green : C.red, fontFamily: "JetBrains Mono" }}>{wr7}%</div>
-            <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase" }}>Last 7</div>
-          </div>
-          <div style={{ flex: 1, height: 80 }}>
-            {trades.length > 0 && <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={25} outerRadius={38} dataKey="value">{pieData.map((_, i) => <Cell key={i} fill={i === 0 ? C.green : C.red} />)}</Pie><Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }} /></PieChart></ResponsiveContainer>}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-          <Pill color={C.green}>W: {wins}</Pill>
-          <Pill color={C.red}>L: {losses}</Pill>
-          <Pill color={C.muted}>Total: {trades.length}</Pill>
-        </div>
-      </Card>
-
-      {/* Add Trade */}
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="➕" title="Log New Trade" color={C.accent} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
-          {[["date","Date","date"],["pair","Pair (e.g. XAUUSD)","text"],["setup","Setup","text"],["entry","Entry Price","number"],["sl","Stop Loss","number"],["tp","Take Profit","number"],["risk","Risk %","number"]].map(([f, l, t]) => (
-            <div key={f}><label>{l}</label><input type={t} value={form[f]} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))} /></div>
-          ))}
-          <div>
-            <label>Result</label>
-            <select value={form.result} onChange={e => setForm(p => ({ ...p, result: e.target.value }))} style={{ background: C.bg, border: `1px solid ${C.border}`, color: form.result === "WIN" ? C.green : form.result === "LOSS" ? C.red : C.text }}>
-              <option value="">Select</option>
-              <option value="WIN">WIN</option>
-              <option value="LOSS">LOSS</option>
-              <option value="BE">BREAK EVEN</option>
-            </select>
-          </div>
-          <div><label>Emotion Before</label><input value={form.emotion_before} onChange={e => setForm(p => ({ ...p, emotion_before: e.target.value }))} placeholder="e.g. Calm, Nervous" /></div>
-          <div><label>Emotion After</label><input value={form.emotion_after} onChange={e => setForm(p => ({ ...p, emotion_after: e.target.value }))} placeholder="e.g. Confident, Frustrated" /></div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
-          <div><label>Lesson Learned</label><textarea value={form.lesson} onChange={e => setForm(p => ({ ...p, lesson: e.target.value }))} style={{ minHeight: 60 }} /></div>
-          <div><label>Mistakes Made</label><textarea value={form.mistake} onChange={e => setForm(p => ({ ...p, mistake: e.target.value }))} style={{ minHeight: 60 }} /></div>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <label>Screenshot</label>
-          <input type="file" accept="image/*" style={{ fontSize: 11, padding: "6px 8px" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setImg(ev.target.result); r.readAsDataURL(f); }} />
-          {img && <img src={img} alt="chart" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 8, marginTop: 8 }} />}
-        </div>
-        <Btn onClick={submit} style={{ marginTop: 16 }}>Log Trade</Btn>
-      </Card>
-
-      {/* Trade History */}
-      {trades.slice().reverse().slice(0, 10).map(t => (
-        <Card key={t.id} style={{ border: `1px solid ${t.result === "WIN" ? C.green : t.result === "LOSS" ? C.red : C.border}33` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>{t.pair}</span>
-            <Pill color={t.result === "WIN" ? C.green : t.result === "LOSS" ? C.red : C.muted}>{t.result || "—"}</Pill>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 12 }}>
-            {[["Setup", t.setup],["Entry", t.entry],["SL", t.sl],["TP", t.tp],["Risk", t.risk + "%"],["Date", t.date]].map(([l, v]) => v && (
-              <div key={l}><span style={{ color: C.muted }}>{l}: </span><span style={{ fontFamily: "JetBrains Mono" }}>{v}</span></div>
-            ))}
-          </div>
-          {t.lesson && <div style={{ marginTop: 8, fontSize: 12, color: C.gold }}>💡 {t.lesson}</div>}
-          {t.screenshot && <img src={t.screenshot} alt="chart" style={{ width: "100%", maxHeight: 140, objectFit: "cover", borderRadius: 6, marginTop: 8 }} />}
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-// ─── LANGUAGE ─────────────────────────────────────────────────────────────────
-function LanguagePage({ lang, setLang }) {
-  const key = today();
-  const e = lang[key] || {};
-  const set = (f, v) => setLang(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [f]: v } }));
-
-  const hskData = [{ subject: "Reading", val: e.hskReading || 0 },{ subject: "Listening", val: e.hskListening || 0 },{ subject: "Writing", val: e.hskWriting || 0 },{ subject: "Speaking", val: e.hskSpeaking || 0 },{ subject: "Vocab", val: e.hskVocab || 0 }];
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card>
-        <CardTitle icon="🇨🇳" title="Chinese — HSK Progress" color={C.red} />
-        {[["chineseHours","Study Hours Today"],["chineseVocab","New Vocabulary Learned"],["hskLevel","HSK Target Level"]].map(([f,l]) => (
-          <div key={f} style={{ marginBottom: 10 }}><label>{l}</label><input type="number" min="0" value={e[f] || ""} onChange={ev => set(f, +ev.target.value)} /></div>
-        ))}
-        <label>Today's Practice</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-          {[["chinSpeaking","Speaking"],["chinListening","Listening"],["chinWriting","Writing"],["chinReading","Reading"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", textTransform: "none", letterSpacing: 0, background: e[f] ? C.red + "22" : C.dim, padding: "6px 12px", borderRadius: 20, border: `1px solid ${e[f] ? C.red : C.border}` }}>
-              <input type="checkbox" checked={!!e[f]} onChange={ev => set(f, ev.target.checked)} style={{ accentColor: C.red, width: 14, height: 14 }} />
-              <span style={{ fontSize: 12, color: e[f] ? C.red : C.muted }}>{l}</span>
-            </label>
-          ))}
-        </div>
-        <div style={{ marginTop: 12 }}><label>Notes / Sentences Practiced</label><textarea value={e.chineseNotes || ""} onChange={ev => set("chineseNotes", ev.target.value)} /></div>
-      </Card>
-
-      <Card>
-        <CardTitle icon="🇬🇧" title="English Progress" color={C.accent} />
-        {[["englishHours","Study Hours Today"],["englishVocab","New Words Learned"]].map(([f,l]) => (
-          <div key={f} style={{ marginBottom: 10 }}><label>{l}</label><input type="number" min="0" value={e[f] || ""} onChange={ev => set(f, +ev.target.value)} /></div>
-        ))}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-          {[["engSpeaking","Speaking"],["engListening","Listening"],["engWriting","Writing"],["engReading","Reading"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", textTransform: "none", letterSpacing: 0, background: e[f] ? C.accent + "22" : C.dim, padding: "6px 12px", borderRadius: 20, border: `1px solid ${e[f] ? C.accent : C.border}` }}>
-              <input type="checkbox" checked={!!e[f]} onChange={ev => set(f, ev.target.checked)} style={{ accentColor: C.accent, width: 14, height: 14 }} />
-              <span style={{ fontSize: 12, color: e[f] ? C.accent : C.muted }}>{l}</span>
-            </label>
-          ))}
-        </div>
-        <div style={{ marginTop: 12 }}><label>Notes / What I Learned</label><textarea value={e.englishNotes || ""} onChange={ev => set("englishNotes", ev.target.value)} /></div>
-      </Card>
-
-      <Card>
-        <CardTitle icon="📊" title="Skills Radar" color={C.purple} />
-        <div style={{ height: 200 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={hskData}>
-              <PolarGrid stroke={C.border} />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: C.muted, fontSize: 11 }} />
-              <Radar name="Skills" dataKey="val" stroke={C.red} fill={C.red} fillOpacity={0.25} />
-              <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-          {[["hskReading","Reading"],["hskListening","Listening"],["hskWriting","Writing"],["hskSpeaking","Speaking"],["hskVocab","Vocabulary"]].map(([f, l]) => (
-            <div key={f}>
-              <label>{l} (0-100)</label>
-              <input type="number" min="0" max="100" value={e[f] || ""} onChange={ev => set(f, +ev.target.value)} />
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-// ─── BIBLE JOURNAL ────────────────────────────────────────────────────────────
-function BiblePage({ bible, setBible }) {
-  const key = today();
-  const e = bible[key] || {};
-  const set = (f, v) => setBible(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [f]: v } }));
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1", background: `linear-gradient(135deg,${C.card},#0f1520)`, border: `1px solid ${C.purple}33` }}>
-        <CardTitle icon="✝️" title="Bible & Prayer Journal" color={C.purple} />
-        <div style={{ padding: "12px 16px", background: C.purple + "11", borderLeft: `3px solid ${C.purple}`, borderRadius: 4, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: C.purple, fontStyle: "italic" }}>"Trust in the Lord with all your heart and lean not on your own understanding." — Proverbs 3:5</div>
-        </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {[["prayer","Morning Prayer ✓"],["bibleRead","Bible Reading ✓"],["nightPrayer","Night Prayer ✓"]].map(([f, l]) => (
-            <label key={f} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", textTransform: "none", letterSpacing: 0, background: e[f] ? C.purple + "22" : C.dim, padding: "8px 16px", borderRadius: 20, border: `1px solid ${e[f] ? C.purple : C.border}` }}>
-              <input type="checkbox" checked={!!e[f]} onChange={ev => set(f, ev.target.checked)} style={{ accentColor: C.purple, width: 16, height: 16 }} />
-              <span style={{ fontSize: 13, color: e[f] ? C.purple : C.muted }}>{l}</span>
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      {[
-        ["biblePassage", "📖 Bible Passage Read", "e.g. John 3:16-21"],
-        ["godTaughtMe", "💬 What God Taught Me Today", "Write what you felt or understood..."],
-        ["favoriteVerse", "⭐ Favorite Verse Today", "Write the verse..."],
-        ["prayerNotes", "🙏 Prayer Notes", "Who or what did you pray for?"],
-        ["gratitude", "🌟 Gratitude", "What are you grateful for today?"],
-      ].map(([f, l, p]) => (
-        <Card key={f} style={{ border: `1px solid ${C.purple}22` }}>
-          <label style={{ fontSize: 13, color: C.purple, textTransform: "none", letterSpacing: 0, marginBottom: 8, display: "block", fontWeight: 700 }}>{l}</label>
-          <textarea placeholder={p} value={e[f] || ""} onChange={ev => set(f, ev.target.value)} />
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-// ─── GOALS ────────────────────────────────────────────────────────────────────
-function GoalsPage({ goals, setGoals }) {
-  const set = (f, v) => setGoals(prev => ({ ...prev, [f]: v }));
-  const GOAL_LIST = [
-    { key: "sixpack", label: "Six Pack", icon: "💪", color: C.red, desc: "Body fat & abs progress" },
-    { key: "funded", label: "$100K Funded Account", icon: "💰", color: C.gold, desc: "Pass funded account challenge" },
-    { key: "withdrawal", label: "$10K Withdrawal", icon: "💵", color: C.green, desc: "Withdraw from trading profits" },
-    { key: "hsk", label: "HSK 5 + Prepare HSK 6", icon: "🇨🇳", color: C.red, desc: "Chinese language certification" },
-    { key: "english", label: "Improve English", icon: "🇬🇧", color: C.accent, desc: "Fluency & vocabulary" },
-    { key: "ai", label: "Learn AI & Business", icon: "🤖", color: C.purple, desc: "AI tools and business skills" },
-    { key: "income", label: "Multiple Income Streams", icon: "📈", color: C.gold, desc: "Build passive/active income" },
-    { key: "bible", label: "Closer to God", icon: "✝️", color: "#e8d5ff", desc: "Daily prayer & Bible reading" },
+// ── LANGUAGE ──
+function LanguagePage({lang,setLang}){
+  const k=todayStr();const e=lang[k]||{};
+  const set=(f,v)=>setLang(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
+  const radar=[
+    {subject:"Reading",val:e.hskReading||0},{subject:"Listening",val:e.hskListening||0},
+    {subject:"Writing",val:e.hskWriting||0},{subject:"Speaking",val:e.hskSpeaking||0},{subject:"Vocab",val:e.hskVocab||0}
   ];
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="🎯" title="2026 Goals Dashboard" color={C.gold} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 8 }}>
-          {GOAL_LIST.map(g => (
-            <div key={g.key} style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", border: `1px solid ${C.border}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>{g.icon} {g.label}</span>
-                <span style={{ color: g.color, fontFamily: "JetBrains Mono", fontSize: 12 }}>{goals[g.key] || 0}%</span>
-              </div>
-              <ProgressBar value={goals[g.key] || 0} max={100} color={g.color} showPct={false} />
-              <input type="range" min="0" max="100" value={goals[g.key] || 0} onChange={e => set(g.key, +e.target.value)} style={{ width: "100%", marginTop: 4, padding: 0, border: "none", background: "transparent", accentColor: g.color }} />
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Fears Section */}
-      <Card style={{ border: `1px solid ${C.red}33` }}>
-        <CardTitle icon="⚡" title="My Fears — Face Them" color={C.red} />
-        {[
-          "Fear of wasting my potential",
-          "Fear of being lazy",
-          "Fear of financial failure",
-          "Fear of emotional trading",
-          "Fear of failing HSK",
-          "Fear of not reaching my goals",
-          "Fear of losing discipline",
-          "Fear of becoming successful but empty",
-          "Fear of drifting away from God",
-          "Fear of regret",
-        ].map(f => (
-          <div key={f} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8, padding: "8px 12px", background: C.red + "0a", borderRadius: 6, border: `1px solid ${C.red}22` }}>
-            <span style={{ color: C.red, marginTop: 1 }}>▸</span>
-            <span style={{ fontSize: 12 }}>{f}</span>
-          </div>
-        ))}
-      </Card>
-
-      <Card>
-        <CardTitle icon="🔥" title="My Vision" color={C.gold} />
-        {["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map((v, i) => (
-          <div key={v} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 7 ? `1px solid ${C.border}` : "none" }}>
-            <div style={{ width: 24, height: 24, background: C.gold + "22", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: C.gold, fontSize: 11, fontWeight: 700 }}>{i + 1}</div>
-            <span style={{ fontSize: 13 }}>{v}</span>
-          </div>
-        ))}
-        <div style={{ marginTop: 16, padding: "12px 16px", background: C.gold + "11", borderRadius: 8, fontSize: 12, color: C.gold, fontStyle: "italic", textAlign: "center" }}>
-          "Am I becoming the person I said I wanted to become?"
-        </div>
-      </Card>
-    </div>
-  );
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"zh"},
+      [React.createElement(CT,{key:"ct",icon:"🇨🇳",title:"Chinese — HSK",color:C.red}),
+      ...[["chineseHours","Study Hours Today"],["chineseVocab","New Vocabulary"],["hskLevel","HSK Target Level"]].map(([f,l])=>
+        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+      ),
+      React.createElement("div",{key:"checks",style:{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}},
+        [["chinSpeaking","Speaking"],["chinListening","Listening"],["chinWriting","Writing"],["chinReading","Reading"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.red+"22":C.dim,padding:"6px 12px",borderRadius:20,border:"1px solid "+(e[f]?C.red:C.border)}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.red}}),
+            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.red:C.muted}},l)
+          ])
+        )
+      ),
+      React.createElement("div",{key:"notes",style:{marginTop:12}},[React.createElement("label",{key:"l"},"Notes"),React.createElement("textarea",{key:"t",value:e.chineseNotes||"",onChange:ev=>set("chineseNotes",ev.target.value)})])]
+    ),
+    React.createElement(Card,{key:"en"},
+      [React.createElement(CT,{key:"ct",icon:"🇬🇧",title:"English",color:C.accent}),
+      ...[["englishHours","Study Hours Today"],["englishVocab","New Words"]].map(([f,l])=>
+        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+      ),
+      React.createElement("div",{key:"checks",style:{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}},
+        [["engSpeaking","Speaking"],["engListening","Listening"],["engWriting","Writing"],["engReading","Reading"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.accent+"22":C.dim,padding:"6px 12px",borderRadius:20,border:"1px solid "+(e[f]?C.accent:C.border)}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.accent}}),
+            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.accent:C.muted}},l)
+          ])
+        )
+      ),
+      React.createElement("div",{key:"notes",style:{marginTop:12}},[React.createElement("label",{key:"l"},"Notes"),React.createElement("textarea",{key:"t",value:e.englishNotes||"",onChange:ev=>set("englishNotes",ev.target.value)})])]
+    ),
+    React.createElement(Card,{key:"radar"},
+      [React.createElement(CT,{key:"ct",icon:"📊",title:"Skills Radar",color:C.purple}),
+      React.createElement("div",{key:"c",style:{height:200}},
+        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
+          React.createElement(RadarChart,{data:radar},[
+            React.createElement(PolarGrid,{key:"pg",stroke:C.border}),
+            React.createElement(PolarAngleAxis,{key:"pa",dataKey:"subject",tick:{fill:C.muted,fontSize:11}}),
+            React.createElement(Radar,{key:"r",dataKey:"val",stroke:C.red,fill:C.red,fillOpacity:0.25}),
+            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
+          ])
+        )
+      ),
+      React.createElement("div",{key:"inputs",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}},
+        [["hskReading","Reading"],["hskListening","Listening"],["hskWriting","Writing"],["hskSpeaking","Speaking"],["hskVocab","Vocabulary"]].map(([f,l])=>
+          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l+" (0-100)"),React.createElement("input",{key:"i",type:"number",min:0,max:100,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
+        )
+      )]
+    )
+  ]);
 }
 
-// ─── ANALYTICS ────────────────────────────────────────────────────────────────
-function AnalyticsPage({ journal, routine, fitness, trades, food }) {
-  // Last 30 days
-  const days30 = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split("T")[0];
-  });
-  const days7 = days30.slice(-7);
+// ── BIBLE ──
+function BiblePage({bible,setBible}){
+  const k=todayStr();const e=bible[k]||{};
+  const set=(f,v)=>setBible(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"top",style:{gridColumn:"1/-1",background:"linear-gradient(135deg,"+C.card+",#0f1520)",border:"1px solid "+C.purple+"33"}},
+      [React.createElement(CT,{key:"ct",icon:"✝️",title:"Bible & Prayer Journal",color:C.purple}),
+      React.createElement("div",{key:"quote",style:{padding:"12px 16px",background:C.purple+"11",borderLeft:"3px solid "+C.purple,borderRadius:4,marginBottom:16,fontSize:12,color:C.purple,fontStyle:"italic"}},
+        '"Trust in the Lord with all your heart and lean not on your own understanding." — Proverbs 3:5'
+      ),
+      React.createElement("div",{key:"checks",style:{display:"flex",gap:16,flexWrap:"wrap"}},
+        [["prayer","Morning Prayer ✓"],["bibleRead","Bible Reading ✓"],["nightPrayer","Night Prayer ✓"]].map(([f,l])=>
+          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:8,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.purple+"22":C.dim,padding:"8px 16px",borderRadius:20,border:"1px solid "+(e[f]?C.purple:C.border)}},[
+            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.purple}}),
+            React.createElement("span",{key:"s",style:{fontSize:13,color:e[f]?C.purple:C.muted}},l)
+          ])
+        )
+      )]
+    ),
+    ...[
+      ["biblePassage","📖 Bible Passage Read","e.g. John 3:16-21"],
+      ["godTaughtMe","💬 What God Taught Me Today","Write what you felt..."],
+      ["favoriteVerse","⭐ Favorite Verse Today","Write the verse..."],
+      ["prayerNotes","🙏 Prayer Notes","Who or what did you pray for?"],
+      ["gratitude","🌟 Gratitude","What are you grateful for?"],
+    ].map(([f,l,p])=>
+      React.createElement(Card,{key:f,style:{border:"1px solid "+C.purple+"22"}},
+        [React.createElement("div",{key:"lbl",style:{fontSize:13,color:C.purple,marginBottom:8,fontWeight:700}},l),
+        React.createElement("textarea",{key:"ta",placeholder:p,value:e[f]||"",onChange:ev=>set(f,ev.target.value)})]
+      )
+    )
+  ]);
+}
 
-  // Heatmap data for 52 weeks
-  const heatDays = Array.from({ length: 91 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (90 - i));
-    const k = d.toISOString().split("T")[0];
-    const r = routine[k] || {};
-    const j = journal[k] || {};
-    let score = 0;
-    if (r.prayer) score++;
-    if (r.bibleReading) score++;
-    if (r.weights || r.cardio) score++;
-    if (r.tradingStudy) score++;
-    if (r.chineseStudy) score++;
-    if (j.proteinGoal) score++;
-    return { date: k, score, day: d.getDay(), week: Math.floor(i / 7) };
-  });
-
-  const weeklyScores = days7.map(k => ({ name: k.slice(5), score: calcDailyScore(routine[k] || {}, journal[k] || {}) }));
-
-  const habitData = [
-    { name: "Prayer", val: days30.filter(k => routine[k]?.prayer).length },
-    { name: "Bible", val: days30.filter(k => routine[k]?.bibleReading).length },
-    { name: "Workout", val: days30.filter(k => routine[k]?.weights || routine[k]?.cardio).length },
-    { name: "Trading", val: days30.filter(k => routine[k]?.tradingStudy).length },
-    { name: "Chinese", val: days30.filter(k => routine[k]?.chineseStudy).length },
-    { name: "English", val: days30.filter(k => routine[k]?.englishStudy).length },
-    { name: "Protein", val: days30.filter(k => journal[k]?.proteinGoal).length },
+// ── GOALS ──
+function GoalsPage({goals,setGoals}){
+  const set=(f,v)=>setGoals(p=>({...p,[f]:v}));
+  const GLIST=[
+    {key:"sixpack",label:"Six Pack",icon:"💪",color:C.red},
+    {key:"funded",label:"$100K Funded Account",icon:"💰",color:C.gold},
+    {key:"withdrawal",label:"$10K Withdrawal",icon:"💵",color:C.green},
+    {key:"hsk",label:"HSK 5 + Prepare HSK 6",icon:"🇨🇳",color:C.red},
+    {key:"english",label:"Improve English",icon:"🇬🇧",color:C.accent},
+    {key:"ai",label:"Learn AI & Business",icon:"🤖",color:C.purple},
+    {key:"income",label:"Multiple Income Streams",icon:"📈",color:C.gold},
+    {key:"bible",label:"Closer to God",icon:"✝️",color:"#e8d5ff"},
   ];
-
-  const bestHabit = habitData.sort((a, b) => b.val - a.val)[0];
-  const worstHabit = [...habitData].sort((a, b) => a.val - b.val)[0];
-
-  // Food report
-  const food7 = days7.map(k => food[k] || {});
-  const greenDays = food7.filter(f => f.proteinGoal && f.caloriesGoal && (f.healthyMeals || 0) >= 3).length;
-  const redDays = food7.filter(f => !f.proteinGoal && !f.caloriesGoal).length;
-  const yellowDays = 7 - greenDays - redDays;
-  const nutritionScore = Math.round((greenDays / 7) * 100);
-
-  const heatColors = ["#1a2030", "#003d1f", "#006636", "#00a354", C.green];
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
-      {/* Weekly score chart */}
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="📊" title="Daily Score — Last 7 Days" color={C.accent} />
-        <div style={{ height: 160 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyScores}>
-              <Bar dataKey="score" fill={C.accent} radius={[4, 4, 0, 0]} />
-              <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
-              <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      {/* Habit Completion */}
-      <Card>
-        <CardTitle icon="✅" title="Habit Completion — 30 Days" color={C.green} />
-        {habitData.map(h => (
-          <div key={h.name} style={{ marginBottom: 8 }}>
-            <ProgressBar label={`${h.name} (${h.val}/30)`} value={h.val} max={30} color={h.val >= 20 ? C.green : h.val >= 10 ? C.yellow : C.red} />
-          </div>
-        ))}
-      </Card>
-
-      {/* Personal Growth */}
-      <Card>
-        <CardTitle icon="🔍" title="Personal Growth" color={C.gold} />
-        <div style={{ display: "grid", gap: 12 }}>
-          {[
-            { label: "Best Habit This Month", val: bestHabit?.name, color: C.green, icon: "🏆" },
-            { label: "Needs Improvement", val: worstHabit?.name, color: C.red, icon: "⚠️" },
-          ].map(item => (
-            <div key={item.label} style={{ padding: "12px 16px", background: item.color + "11", borderLeft: `3px solid ${item.color}`, borderRadius: 4 }}>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>{item.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: item.color }}>{item.icon} {item.val || "—"}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Weekly Food Report */}
-      <Card>
-        <CardTitle icon="🥗" title="Weekly Nutrition Report" color={C.green} />
-        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-          {[["🟢 Green", greenDays, C.green],["🟡 Yellow", yellowDays, C.yellow],["🔴 Red", redDays, C.red]].map(([l, v, c]) => (
-            <div key={l} style={{ flex: 1, textAlign: "center", padding: "10px 8px", background: c + "11", borderRadius: 8, border: `1px solid ${c}33` }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: c, fontFamily: "JetBrains Mono" }}>{v}</div>
-              <div style={{ fontSize: 10, color: C.muted }}>{l} Days</div>
-            </div>
-          ))}
-        </div>
-        <ProgressBar label={`Weekly Score: ${nutritionScore}%`} value={nutritionScore} max={100} color={nutritionScore >= 70 ? C.green : nutritionScore >= 40 ? C.yellow : C.red} />
-      </Card>
-
-      {/* Heatmap */}
-      <Card style={{ gridColumn: "1/-1" }}>
-        <CardTitle icon="🔥" title="Life Heatmap — Last 13 Weeks" color={C.accent} />
-        <div style={{ overflowX: "auto" }}>
-          <div style={{ display: "flex", gap: 3 }}>
-            {Array.from({ length: 13 }, (_, w) => (
-              <div key={w} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                {Array.from({ length: 7 }, (_, d) => {
-                  const cell = heatDays.find(h => h.week === w && h.day === d);
-                  const s = cell?.score || 0;
-                  return <div key={d} title={cell?.date} style={{ width: 14, height: 14, borderRadius: 3, background: heatColors[Math.min(s, 4)], border: `1px solid ${C.border}22` }} />;
-                })}
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 4, marginTop: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: C.muted }}>Less</span>
-            {heatColors.map((c, i) => <div key={i} style={{ width: 12, height: 12, borderRadius: 2, background: c }} />)}
-            <span style={{ fontSize: 10, color: C.muted }}>More</span>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
+  const FEARS=[
+    "Fear of wasting my potential","Fear of being lazy","Fear of financial failure",
+    "Fear of emotional trading","Fear of failing HSK","Fear of not reaching my goals",
+    "Fear of losing discipline","Fear of becoming successful but empty",
+    "Fear of drifting away from God","Fear of regret",
+  ];
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"goals",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"🎯",title:"2026 Goals Dashboard",color:C.gold}),
+      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8}},
+        GLIST.map(g=>
+          React.createElement("div",{key:g.key,style:{background:C.bg,borderRadius:8,padding:"12px 14px",border:"1px solid "+C.border}},
+            [React.createElement("div",{key:"hd",style:{display:"flex",justifyContent:"space-between",marginBottom:6}},[
+              React.createElement("span",{key:"l",style:{fontSize:12,fontWeight:700}},g.icon+" "+g.label),
+              React.createElement("span",{key:"v",style:{color:g.color,fontFamily:"JetBrains Mono",fontSize:12}},(goals[g.key]||0)+"%")
+            ]),
+            React.createElement(PBar,{key:"pb",value:goals[g.key]||0,max:100,color:g.color,showPct:false}),
+            React.createElement("input",{key:"r",type:"range",min:0,max:100,value:goals[g.key]||0,onChange:ev=>set(g.key,+ev.target.value),style:{width:"100%",marginTop:4,accentColor:g.color}})]
+          )
+        )
+      )]
+    ),
+    React.createElement(Card,{key:"fears",style:{border:"1px solid "+C.red+"33"}},
+      [React.createElement(CT,{key:"ct",icon:"⚡",title:"My Fears — Face Them",color:C.red}),
+      FEARS.map(f=>
+        React.createElement("div",{key:f,style:{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8,padding:"8px 12px",background:C.red+"0a",borderRadius:6,border:"1px solid "+C.red+"22"}},[
+          React.createElement("span",{key:"a",style:{color:C.red}},"▸"),
+          React.createElement("span",{key:"t",style:{fontSize:12}},f)
+        ])
+      )]
+    ),
+    React.createElement(Card,{key:"vision"},
+      [React.createElement(CT,{key:"ct",icon:"🔥",title:"My Vision",color:C.gold}),
+      ["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map((v,i)=>
+        React.createElement("div",{key:v,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<7?"1px solid "+C.border:"none"}},[
+          React.createElement("div",{key:"n",style:{width:24,height:24,background:C.gold+"22",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontSize:11,fontWeight:700}},i+1),
+          React.createElement("span",{key:"t",style:{fontSize:13}},v)
+        ])
+      ),
+      React.createElement("div",{key:"q",style:{marginTop:16,padding:"12px 16px",background:C.gold+"11",borderRadius:8,fontSize:12,color:C.gold,fontStyle:"italic",textAlign:"center"}},
+        '"Am I becoming the person I said I wanted to become?"'
+      )]
+    )
+  ]);
 }
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-const PAGES = [
-  { id: "home", label: "Dashboard", icon: "⬡" },
-  { id: "routine", label: "Routine", icon: "⏰" },
-  { id: "journal", label: "Journal", icon: "📔" },
-  { id: "food", label: "Food", icon: "🍽️" },
-  { id: "fitness", label: "Fitness", icon: "💪" },
-  { id: "trading", label: "Trading", icon: "📈" },
-  { id: "language", label: "Language", icon: "🗣️" },
-  { id: "bible", label: "Bible", icon: "✝️" },
-  { id: "goals", label: "Goals", icon: "🎯" },
-  { id: "analytics", label: "Analytics", icon: "📊" },
+// ── ANALYTICS ──
+function AnalyticsPage({journal,routine,fitness,trades,food}){
+  const days30=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(29-i));return d.toISOString().split("T")[0];});
+  const days7=days30.slice(-7);
+  const wScores=days7.map(k=>({name:k.slice(5),score:calcScore(routine[k]||{},journal[k]||{})}));
+  const habits=[
+    {name:"Prayer",val:days30.filter(k=>routine[k]?.prayer).length},
+    {name:"Bible",val:days30.filter(k=>routine[k]?.bibleReading).length},
+    {name:"Workout",val:days30.filter(k=>routine[k]?.weights||routine[k]?.cardio).length},
+    {name:"Trading",val:days30.filter(k=>routine[k]?.tradingStudy).length},
+    {name:"Chinese",val:days30.filter(k=>routine[k]?.chineseStudy).length},
+    {name:"English",val:days30.filter(k=>routine[k]?.englishStudy).length},
+    {name:"Protein",val:days30.filter(k=>journal[k]?.proteinGoal).length},
+  ];
+  const best=[...habits].sort((a,b)=>b.val-a.val)[0];
+  const worst=[...habits].sort((a,b)=>a.val-b.val)[0];
+  const food7=days7.map(k=>food[k]||{});
+  const greenDays=food7.filter(f=>f.proteinGoal&&f.caloriesGoal&&(f.healthyMeals||0)>=3).length;
+  const redDays=food7.filter(f=>!f.proteinGoal&&!f.caloriesGoal).length;
+  const yellowDays=7-greenDays-redDays;
+  const nutScore=Math.round((greenDays/7)*100);
+  // Heatmap
+  const heatDays=Array.from({length:91},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-(90-i));
+    const k=d.toISOString().split("T")[0];
+    const r=routine[k]||{};const j=journal[k]||{};
+    let score=0;
+    if(r.prayer)score++;if(r.bibleReading)score++;if(r.weights||r.cardio)score++;
+    if(r.tradingStudy)score++;if(r.chineseStudy)score++;if(j.proteinGoal)score++;
+    return{date:k,score,day:d.getDay(),week:Math.floor(i/7)};
+  });
+  const heatColors=["#1a2030","#003d1f","#006636","#00a354",C.green];
+  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
+    React.createElement(Card,{key:"wscore",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"📊",title:"Daily Score — Last 7 Days",color:C.accent}),
+      React.createElement("div",{key:"c",style:{height:160}},
+        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
+          React.createElement(BarChart,{data:wScores},[
+            React.createElement(Bar,{key:"b",dataKey:"score",fill:C.accent,radius:[4,4,0,0]}),
+            React.createElement(XAxis,{key:"x",dataKey:"name",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
+            React.createElement(YAxis,{key:"y",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false,domain:[0,100]}),
+            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
+          ])
+        )
+      )]
+    ),
+    React.createElement(Card,{key:"habits"},
+      [React.createElement(CT,{key:"ct",icon:"✅",title:"Habit Completion — 30 Days",color:C.green}),
+      habits.map(h=>
+        React.createElement(PBar,{key:h.name,label:h.name+" ("+h.val+"/30)",value:h.val,max:30,color:h.val>=20?C.green:h.val>=10?C.yellow:C.red})
+      )]
+    ),
+    React.createElement(Card,{key:"growth"},
+      [React.createElement(CT,{key:"ct",icon:"🔍",title:"Personal Growth",color:C.gold}),
+      [
+        {label:"Best Habit This Month",val:best?.name,color:C.green,icon:"🏆"},
+        {label:"Needs Improvement",val:worst?.name,color:C.red,icon:"⚠️"},
+      ].map(item=>
+        React.createElement("div",{key:item.label,style:{padding:"12px 16px",background:item.color+"11",borderLeft:"3px solid "+item.color,borderRadius:4,marginBottom:12}},[
+          React.createElement("div",{key:"l",style:{fontSize:11,color:C.muted,marginBottom:4}},item.label),
+          React.createElement("div",{key:"v",style:{fontSize:18,fontWeight:800,color:item.color}},item.icon+" "+(item.val||"—"))
+        ])
+      )]
+    ),
+    React.createElement(Card,{key:"food"},
+      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Weekly Nutrition Report",color:C.green}),
+      React.createElement("div",{key:"boxes",style:{display:"flex",gap:12,marginBottom:16}},
+        [["🟢 Green",greenDays,C.green],["🟡 Yellow",yellowDays,C.yellow],["🔴 Red",redDays,C.red]].map(([l,v,c])=>
+          React.createElement("div",{key:l,style:{flex:1,textAlign:"center",padding:"10px 8px",background:c+"11",borderRadius:8,border:"1px solid "+c+"33"}},[
+            React.createElement("div",{key:"n",style:{fontSize:20,fontWeight:800,color:c,fontFamily:"JetBrains Mono"}},v),
+            React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted}},l+" Days")
+          ])
+        )
+      ),
+      React.createElement(PBar,{key:"pb",label:"Weekly Score: "+nutScore+"%",value:nutScore,max:100,color:nutScore>=70?C.green:nutScore>=40?C.yellow:C.red})]
+    ),
+    React.createElement(Card,{key:"heatmap",style:{gridColumn:"1/-1"}},
+      [React.createElement(CT,{key:"ct",icon:"🔥",title:"Life Heatmap — Last 13 Weeks",color:C.accent}),
+      React.createElement("div",{key:"wrap",style:{overflowX:"auto"}},
+        [React.createElement("div",{key:"grid",style:{display:"flex",gap:3}},
+          Array.from({length:13},(_,w)=>
+            React.createElement("div",{key:w,style:{display:"flex",flexDirection:"column",gap:3}},
+              Array.from({length:7},(_,d)=>{
+                const cell=heatDays.find(h=>h.week===w&&h.day===d);
+                const s=cell?.score||0;
+                return React.createElement("div",{key:d,title:cell?.date||"",style:{width:14,height:14,borderRadius:3,background:heatColors[Math.min(s,4)],border:"1px solid "+C.border+"22"}});
+              })
+            )
+          )
+        ),
+        React.createElement("div",{key:"legend",style:{display:"flex",gap:4,marginTop:8,alignItems:"center"}},
+          [React.createElement("span",{key:"less",style:{fontSize:10,color:C.muted}},"Less"),
+          ...heatColors.map((c,i)=>React.createElement("div",{key:i,style:{width:12,height:12,borderRadius:2,background:c}})),
+          React.createElement("span",{key:"more",style:{fontSize:10,color:C.muted}},"More")]
+        )]
+      )]
+    )
+  ]);
+}
+
+// ── MAIN APP ──
+const PAGES=[
+  {id:"home",label:"Dashboard",icon:"⬡"},
+  {id:"routine",label:"Routine",icon:"⏰"},
+  {id:"journal",label:"Journal",icon:"📔"},
+  {id:"food",label:"Food",icon:"🍽️"},
+  {id:"fitness",label:"Fitness",icon:"💪"},
+  {id:"trading",label:"Trading",icon:"📈"},
+  {id:"language",label:"Language",icon:"🗣️"},
+  {id:"bible",label:"Bible",icon:"✝️"},
+  {id:"goals",label:"Goals",icon:"🎯"},
+  {id:"analytics",label:"Analytics",icon:"📊"},
 ];
 
-export default function App() {
-  const [page, setPage] = useState("home");
-  const [journal, setJournal] = useLS("journal", {});
-  const [routine, setRoutine] = useLS("routine", {});
-  const [fitness, setFitness] = useLS("fitness", {});
-  const [trades, setTrades] = useLS("trades", []);
-  const [lang, setLang] = useLS("lang", {});
-  const [bible, setBible] = useLS("bible", {});
-  const [goals, setGoals] = useLS("goals", {});
-  const [food, setFood] = useLS("food", {});
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const score = calcDailyScore(routine[today()] || {}, journal[today()] || {});
-  const scoreColor = score >= 90 ? C.green : score >= 75 ? C.accent : score >= 60 ? C.yellow : C.red;
-
-  return (
-    <>
-      <style>{CSS}</style>
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        {/* Header */}
-        <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 32, height: 32, background: `linear-gradient(135deg,${C.accent},${C.purple})`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⬡</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: ".06em" }}>LIFE OS</div>
-              <div style={{ fontSize: 10, color: C.muted }}>Personal Operating System</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: scoreColor }}>{today()}</div>
-            <div style={{ background: scoreColor + "22", color: scoreColor, border: `1px solid ${scoreColor}44`, borderRadius: 20, padding: "3px 12px", fontFamily: "JetBrains Mono", fontSize: 12, fontWeight: 700 }}>{score}</div>
-            <button onClick={() => setMenuOpen(p => !p)} style={{ background: "none", border: `1px solid ${C.border}`, color: C.text, borderRadius: 6, padding: "6px 10px", fontSize: 14 }}>☰</button>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 20px", overflowX: "auto", whiteSpace: "nowrap", display: menuOpen ? "none" : "block" }}>
-          <div style={{ display: "inline-flex", gap: 0 }}>
-            {PAGES.map(p => (
-              <button key={p.id} onClick={() => setPage(p.id)} style={{ background: "none", border: "none", color: page === p.id ? C.accent : C.muted, padding: "14px 16px", fontSize: 12, fontWeight: 700, borderBottom: `2px solid ${page === p.id ? C.accent : "transparent"}`, borderRadius: 0, transition: "all .2s", whiteSpace: "nowrap" }}>
-                {p.icon} {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8 }}>
-              {PAGES.map(p => (
-                <button key={p.id} onClick={() => { setPage(p.id); setMenuOpen(false); }} style={{ background: page === p.id ? C.accent + "22" : C.bg, border: `1px solid ${page === p.id ? C.accent : C.border}`, color: page === p.id ? C.accent : C.text, padding: "10px 8px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                  {p.icon} {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div style={{ flex: 1, padding: "20px", maxWidth: 1400, width: "100%", margin: "0 auto" }}>
-          {page === "home" && <DashboardHome journal={journal} routine={routine} fitness={fitness} trading={trades} goals={goals} />}
-          {page === "routine" && <RoutinePage routine={routine} setRoutine={setRoutine} />}
-          {page === "journal" && <DailyJournalPage journal={journal} setJournal={setJournal} />}
-          {page === "food" && <FoodJournalPage food={food} setFood={setFood} />}
-          {page === "fitness" && <FitnessPage fitness={fitness} setFitness={setFitness} />}
-          {page === "trading" && <TradingPage trades={trades} setTrades={setTrades} />}
-          {page === "language" && <LanguagePage lang={lang} setLang={setLang} />}
-          {page === "bible" && <BiblePage bible={bible} setBible={setBible} />}
-          {page === "goals" && <GoalsPage goals={goals} setGoals={setGoals} />}
-          {page === "analytics" && <AnalyticsPage journal={journal} routine={routine} fitness={fitness} trades={trades} food={food} />}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: "12px 20px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "center", gap: 24 }}>
-          <span style={{ fontSize: 11, color: C.muted }}>All data saved locally in your browser</span>
-        </div>
-      </div>
-    </>
-  );
+function App(){
+  const [page,setPage]=useState("home");
+  const [journal,setJournal]=useLS("lifeos_journal",{});
+  const [routine,setRoutine]=useLS("lifeos_routine",{});
+  const [fitness,setFitness]=useLS("lifeos_fitness",{});
+  const [trades,setTrades]=useLS("lifeos_trades",[]);
+  const [lang,setLang]=useLS("lifeos_lang",{});
+  const [bible,setBible]=useLS("lifeos_bible",{});
+  const [goals,setGoals]=useLS("lifeos_goals",{});
+  const [food,setFood]=useLS("lifeos_food",{});
+  const [menuOpen,setMenuOpen]=useState(false);
+  const score=calcScore(routine[todayStr()]||{},journal[todayStr()]||{});
+  const sc=score>=90?C.green:score>=75?C.accent:score>=60?C.yellow:C.red;
+  return React.createElement("div",{style:{minHeight:"100vh",display:"flex",flexDirection:"column"}},[
+    // Header
+    React.createElement("div",{key:"hdr",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:"0 20px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}},[
+      React.createElement("div",{key:"logo",style:{display:"flex",alignItems:"center",gap:12}},[
+        React.createElement("div",{key:"icon",style:{width:32,height:32,background:"linear-gradient(135deg,"+C.accent+","+C.purple+")",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},"⬡"),
+        React.createElement("div",{key:"text"},[
+          React.createElement("div",{key:"t",style:{fontSize:13,fontWeight:800,letterSpacing:".06em"}},"LIFE OS"),
+          React.createElement("div",{key:"s",style:{fontSize:10,color:C.muted}},"Personal Operating System")
+        ])
+      ]),
+      React.createElement("div",{key:"right",style:{display:"flex",alignItems:"center",gap:12}},[
+        React.createElement("div",{key:"date",style:{fontFamily:"JetBrains Mono",fontSize:11,color:sc}},todayStr()),
+        React.createElement("div",{key:"score",style:{background:sc+"22",color:sc,border:"1px solid "+sc+"44",borderRadius:20,padding:"3px 12px",fontFamily:"JetBrains Mono",fontSize:12,fontWeight:700}},score),
+        React.createElement("button",{key:"menu",onClick:()=>setMenuOpen(p=>!p),style:{background:"none",border:"1px solid "+C.border,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:14}},"☰")
+      ])
+    ]),
+    // Nav bar
+    !menuOpen&&React.createElement("div",{key:"nav",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:"0 20px",overflowX:"auto",whiteSpace:"nowrap"}},
+      React.createElement("div",{style:{display:"inline-flex"}},
+        PAGES.map(p=>
+          React.createElement("button",{key:p.id,onClick:()=>setPage(p.id),style:{background:"none",border:"none",color:page===p.id?C.accent:C.muted,padding:"14px 14px",fontSize:12,fontWeight:700,borderBottom:"2px solid "+(page===p.id?C.accent:"transparent"),borderRadius:0,whiteSpace:"nowrap"}},
+            p.icon+" "+p.label
+          )
+        )
+      )
+    ),
+    // Mobile menu
+    menuOpen&&React.createElement("div",{key:"mmenu",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:16}},
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8}},
+        PAGES.map(p=>
+          React.createElement("button",{key:p.id,onClick:()=>{setPage(p.id);setMenuOpen(false);},style:{background:page===p.id?C.accent+"22":C.bg,border:"1px solid "+(page===p.id?C.accent:C.border),color:page===p.id?C.accent:C.text,padding:"10px 6px",borderRadius:8,fontSize:11,fontWeight:700}},
+            p.icon+" "+p.label
+          )
+        )
+      )
+    ),
+    // Content
+    React.createElement("div",{key:"content",style:{flex:1,padding:20,maxWidth:1400,width:"100%",margin:"0 auto"}},
+      page==="home"?React.createElement(DashboardHome,{journal,routine,goals}):
+      page==="routine"?React.createElement(RoutinePage,{routine,setRoutine}):
+      page==="journal"?React.createElement(JournalPage,{journal,setJournal}):
+      page==="food"?React.createElement(FoodPage,{food,setFood}):
+      page==="fitness"?React.createElement(FitnessPage,{fitness,setFitness}):
+      page==="trading"?React.createElement(TradingPage,{trades,setTrades}):
+      page==="language"?React.createElement(LanguagePage,{lang,setLang}):
+      page==="bible"?React.createElement(BiblePage,{bible,setBible}):
+      page==="goals"?React.createElement(GoalsPage,{goals,setGoals}):
+      React.createElement(AnalyticsPage,{journal,routine,fitness,trades,food})
+    ),
+    // Footer
+    React.createElement("div",{key:"footer",style:{padding:"12px 20px",borderTop:"1px solid "+C.border,display:"flex",justifyContent:"center"}},
+      React.createElement("span",{style:{fontSize:11,color:C.muted}},"All data saved locally in your browser · LIFE OS")
+    )
+  ]);
 }
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>

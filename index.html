@@ -1,848 +1,3094 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>LIFE OS — Personal Operating System</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0b0f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:#0a0b0f}
-::-webkit-scrollbar-thumb{background:#2a3040;border-radius:2px}
-input,textarea,select{background:#0a0b0f;border:1px solid #1e2330;color:#e8eaf0;font-family:'Syne',sans-serif;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;width:100%;transition:border .2s}
-input:focus,textarea:focus,select:focus{border-color:#00d4ff}
-textarea{resize:vertical;min-height:72px}
-button{cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all .2s}
-label{font-size:11px;color:#6b7280;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;display:block}
-h1,h2,h3,h4{font-weight:700}
-.mono{font-family:'JetBrains Mono',monospace}
-@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.slide-in{animation:slideIn .3s ease forwards}
-input[type=range]{padding:0;border:none;background:transparent}
-input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
-input[type=file]{font-size:11px;padding:6px 8px}
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f5;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f97316;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --gold: #f59e0b;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow-lg: 0 24px 64px rgba(0,0,0,0.6);
+    --font: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'Geist Mono', 'SF Mono', monospace;
+    --sidebar-w: 240px;
+    --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  #app { display:flex; min-height:100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top:0; left:0; bottom:0;
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 14px;
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-section {
+    padding: 16px 12px 8px;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text2);
+    font-size: 13.5px;
+    font-weight: 450;
+    user-select: none;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(108,99,255,0.18); color: var(--accent2); }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align:center; }
+
+  .sidebar-date {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* ── Main ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Topbar ── */
+  #topbar {
+    height: 60px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 20px;
+    padding: 4px;
+  }
+
+  /* ── Content ── */
+  #content {
+    padding: 28px;
+    flex: 1;
+    max-width: 1300px;
+    width: 100%;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.25s ease; }
+
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateY(8px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: var(--transition);
+  }
+
+  .card:hover { border-color: var(--border2); }
+
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .card-value {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 6px;
+  }
+
+  /* ── Grids ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+
+  /* ── Section headers ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    margin-top: 28px;
+  }
+  .section-header:first-child { margin-top: 0; }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    transition: var(--transition);
+    user-select: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.15);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Form Elements ── */
+  input, textarea, select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 10px 14px;
+    width: 100%;
+    outline: none;
+    transition: var(--transition);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+  }
+
+  select option { background: var(--bg3); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ── Progress Bar ── */
+  .progress-wrap {
+    background: var(--bg3);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Score Ring ── */
+  .score-ring-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 24px;
+  }
+
+  .score-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+
+  .score-ring svg {
+    transform: rotate(-90deg);
+    width: 120px;
+    height: 120px;
+  }
+
+  .score-ring-value {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+
+  .score-ring-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+
+  /* ── Tag / Badge ── */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+  .tag-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .tag-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .tag-purple { background: rgba(108,99,255,0.15); color: var(--accent2); }
+  .tag-orange { background: rgba(249,115,22,0.15); color: var(--orange); }
+
+  /* ── Goal Item ── */
+  .goal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .goal-item:last-child { border-bottom: none; }
+
+  .goal-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .goal-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .goal-name { font-size: 14px; font-weight: 500; }
+  .goal-streak { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* ── Checkbox ── */
+  .check-toggle {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 2px solid var(--border2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .check-toggle.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .check-toggle:hover { border-color: var(--accent); }
+
+  /* ── Journal ── */
+  .journal-date {
+    font-size: 13px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .journal-section {
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .journal-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); color: var(--text); }
+
+  /* ── Nutrition Bar ── */
+  .nutrition-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .nutrition-row:last-child { border-bottom: none; }
+
+  .nutrition-name { font-size: 13px; width: 70px; flex-shrink: 0; }
+  .nutrition-values { font-size: 12px; color: var(--text3); width: 90px; flex-shrink: 0; font-family: var(--mono); }
+
+  /* ── Stat Number ── */
+  .stat-num {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── Chart ── */
+  .chart-wrap {
+    position: relative;
+    padding: 16px 0;
+  }
+
+  canvas {
+    width: 100% !important;
+    display: block;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open { opacity:1; pointer-events: all; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-close { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 20px; padding: 4px; transition: var(--transition); }
+  .modal-close:hover { color: var(--text); }
+
+  /* ── Photo Upload ── */
+  .photo-upload {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+  }
+  .photo-upload:hover { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+  .photo-upload input { position: absolute; inset:0; opacity:0; cursor:pointer; }
+  .photo-upload-label { font-size: 13px; color: var(--text3); margin-top: 6px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    font-size: 13px;
+    z-index: 9999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: var(--shadow);
+  }
+  #toast.show { transform: translateY(0); opacity:1; }
+
+  /* ── Streak badge ── */
+  .streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(249,115,22,0.15);
+    color: var(--orange);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* ── Divider ── */
+  .divider { height:1px; background: var(--border); margin: 20px 0; }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg3);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text3);
+    user-select: none;
+  }
+
+  .tab.active {
+    background: var(--bg2);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 100px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(2,1fr); }
+  }
+
+  @media (max-width: 768px) {
+    #sidebar {
+      transform: translateX(-100%);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #main { margin-left: 0; }
+    #hamburger { display: block; }
+    #content { padding: 16px; }
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Analytics chart labels ── */
+  .chart-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  /* ── Color helpers ── */
+  .text-green { color: var(--green); }
+  .text-red { color: var(--red); }
+  .text-blue { color: var(--blue); }
+  .text-yellow { color: var(--yellow); }
+  .text-orange { color: var(--orange); }
+  .text-accent { color: var(--accent2); }
+  .text-muted { color: var(--text3); }
+
+  .bg-green { background: rgba(34,197,94,0.15); }
+  .bg-red { background: rgba(239,68,68,0.15); }
+  .bg-blue { background: rgba(59,130,246,0.15); }
+  .bg-yellow { background: rgba(234,179,8,0.15); }
+  .bg-purple { background: rgba(108,99,255,0.15); }
+  .bg-orange { background: rgba(249,115,22,0.15); }
+  .bg-cyan { background: rgba(6,182,212,0.15); }
+  .bg-pink { background: rgba(236,72,153,0.15); }
+
+  /* ── Sidebar overlay (mobile) ── */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+  }
+  #sidebar-overlay.show { display: block; }
+
+  /* ── HSK progress ── */
+  .hsk-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .hsk-level {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .hsk-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg3);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .hsk-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+  .hsk-pct {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── Watchlist item ── */
+  .watchlist-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .watchlist-item:last-child { border-bottom: none; }
+  .watchlist-ticker {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ── Images grid ── */
+  .img-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .img-thumb {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script>
-const {useState,useEffect,useCallback,useRef} = React;
-const {
-  BarChart,Bar,LineChart,Line,XAxis,YAxis,Tooltip,
-  ResponsiveContainer,RadarChart,Radar,PolarGrid,
-  PolarAngleAxis,PieChart,Pie,Cell
-} = Recharts;
 
-const C = {
-  bg:"#0a0b0f",surface:"#111318",card:"#161a22",border:"#1e2330",
-  accent:"#00d4ff",gold:"#f5c842",green:"#00e676",red:"#ff3d57",
-  yellow:"#ffd600",purple:"#b388ff",text:"#e8eaf0",muted:"#6b7280",dim:"#2a3040"
+<div id="app">
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Life OS</div>
+        <div class="logo-sub">Operating System</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Core</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">⊞</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="journal">
+        <span class="nav-icon">📓</span> Daily Journal
+      </div>
+      <div class="nav-item" data-page="goals">
+        <span class="nav-icon">🎯</span> Life Goals
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Health</div>
+      <div class="nav-item" data-page="nutrition">
+        <span class="nav-icon">🥗</span> Nutrition
+      </div>
+      <div class="nav-item" data-page="fitness">
+        <span class="nav-icon">💪</span> Fitness
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Finance & Skills</div>
+      <div class="nav-item" data-page="trading">
+        <span class="nav-icon">📈</span> Trading Journal
+      </div>
+      <div class="nav-item" data-page="investing">
+        <span class="nav-icon">💹</span> Stock Investing
+      </div>
+      <div class="nav-item" data-page="chinese">
+        <span class="nav-icon">🀄</span> Chinese
+      </div>
+      <div class="nav-item" data-page="ailearning">
+        <span class="nav-icon">🤖</span> AI & E-commerce
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <div class="nav-item" data-page="analytics">
+        <span class="nav-icon">📊</span> Analytics
+      </div>
+    </div>
+
+    <div class="sidebar-date" id="sidebar-date"></div>
+  </nav>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Topbar -->
+    <div id="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button id="hamburger" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+      </div>
+      <div class="topbar-actions">
+        <span id="topbar-date" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div id="content">
+
+      <!-- ══════════════ DASHBOARD ══════════════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="section-header">
+          <div class="section-title">Today's Overview</div>
+          <div class="streak-badge" id="dash-streak">🔥 0 day streak</div>
+        </div>
+
+        <!-- Score cards -->
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="card" style="text-align:center">
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                  <circle id="daily-ring" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+                </svg>
+                <div class="score-ring-value text-accent" id="daily-score">0</div>
+              </div>
+              <div class="score-ring-label">Daily Score</div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                  <circle id="weekly-ring" cx="60" cy="60" r="50" fill="none" stroke="var(--green)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+                </svg>
+                <div class="score-ring-value text-green" id="weekly-score">0</div>
+              </div>
+              <div class="score-ring-label">Weekly Score</div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                  <circle id="monthly-ring" cx="60" cy="60" r="50" fill="none" stroke="var(--blue)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+                </svg>
+                <div class="score-ring-value text-blue" id="monthly-score">0</div>
+              </div>
+              <div class="score-ring-label">Monthly Score</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Goals Today</div>
+            <div class="card-value text-accent" id="dash-goals-done">0/15</div>
+            <div class="card-sub">completed today</div>
+            <div class="progress-wrap" style="margin-top:12px">
+              <div class="progress-bar bg-accent2" id="dash-goals-bar" style="background:var(--accent);width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Goals Quick Check -->
+        <div class="section-header">
+          <div class="section-title">Today's Goals</div>
+          <button class="btn btn-primary btn-sm" onclick="saveTodayGoals()">Save</button>
+        </div>
+
+        <div class="card" id="dash-goals-list">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="section-header" style="margin-top:24px">
+          <div class="section-title">Quick Stats</div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title">Calories Today</div>
+            <div class="stat-num" id="dash-cal">—</div>
+            <div class="card-sub">kcal logged</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Water Today</div>
+            <div class="stat-num" id="dash-water">—</div>
+            <div class="card-sub">ml consumed</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Body Weight</div>
+            <div class="stat-num" id="dash-weight">—</div>
+            <div class="card-sub">last logged</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Trade P&L (Month)</div>
+            <div class="stat-num" id="dash-pnl">—</div>
+            <div class="card-sub">this month</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Study Hours (Week)</div>
+            <div class="stat-num" id="dash-study">—</div>
+            <div class="card-sub">Chinese + AI/E-comm</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Win Rate</div>
+            <div class="stat-num" id="dash-winrate">—</div>
+            <div class="card-sub">trading win rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ DAILY JOURNAL ══════════════ -->
+      <div class="page" id="page-journal">
+        <div class="section-header">
+          <div class="section-title">Daily Journal</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="journal-date-picker" style="width:160px;padding:7px 12px;font-size:13px">
+            <button class="btn btn-primary btn-sm" onclick="saveJournal()">Save Entry</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <!-- Activities -->
+            <div class="journal-section">
+              <div class="journal-section-label">📋 Activities Today</div>
+              <textarea id="j-activities" placeholder="What did you do today?..." rows="4"></textarea>
+            </div>
+
+            <!-- Wins -->
+            <div class="journal-section">
+              <div class="journal-section-label">🏆 Wins</div>
+              <textarea id="j-wins" placeholder="What went well today?..." rows="3"></textarea>
+            </div>
+
+            <!-- Mistakes -->
+            <div class="journal-section">
+              <div class="journal-section-label">⚠️ Mistakes</div>
+              <textarea id="j-mistakes" placeholder="What could have been better?..." rows="3"></textarea>
+            </div>
+          </div>
+
+          <div>
+            <!-- Lessons -->
+            <div class="journal-section">
+              <div class="journal-section-label">💡 Lessons Learned</div>
+              <textarea id="j-lessons" placeholder="What did you learn today?..." rows="3"></textarea>
+            </div>
+
+            <!-- Notes -->
+            <div class="journal-section">
+              <div class="journal-section-label">📝 Daily Notes</div>
+              <textarea id="j-notes" placeholder="Free thoughts, reflections..." rows="4"></textarea>
+            </div>
+
+            <!-- Tomorrow -->
+            <div class="journal-section">
+              <div class="journal-section-label">🎯 Tomorrow's Tasks</div>
+              <textarea id="j-tomorrow" placeholder="Top priorities for tomorrow..." rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto Score -->
+        <div class="card" style="margin-top:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="card-title">Auto Score for this Entry</div>
+              <div class="stat-num text-accent" id="j-score">0 <span style="font-size:14px;font-weight:400;color:var(--text3)">/ 100</span></div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);max-width:300px">
+              Score is calculated based on goals completed, journal completeness, and consistency.
+            </div>
+          </div>
+        </div>
+
+        <!-- Past Entries -->
+        <div class="section-header" style="margin-top:24px">
+          <div class="section-title">Past Entries</div>
+        </div>
+
+        <div class="card" id="journal-list">
+          <div class="empty"><div class="empty-icon">📓</div>No journal entries yet.</div>
+        </div>
+      </div>
+
+      <!-- ══════════════ LIFE GOALS ══════════════ -->
+      <div class="page" id="page-goals">
+        <div class="section-header">
+          <div class="section-title">Life Goals Tracker</div>
+          <div class="journal-date" id="goals-today-label"></div>
+        </div>
+
+        <div class="card" id="goals-list">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="section-header" style="margin-top:24px">
+          <div class="section-title">Streak Overview</div>
+        </div>
+
+        <div class="grid-3" id="streak-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ══════════════ NUTRITION ══════════════ -->
+      <div class="page" id="page-nutrition">
+        <div class="section-header">
+          <div class="section-title">Nutrition Tracker</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('nutrition-modal')">+ Log Food</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="nutTab(this,'nut-today')">Today</div>
+          <div class="tab" onclick="nutTab(this,'nut-log')">Food Log</div>
+          <div class="tab" onclick="nutTab(this,'nut-photos')">Photos</div>
+        </div>
+
+        <!-- Today -->
+        <div id="nut-today">
+          <div class="grid-3" style="margin-bottom:20px">
+            <div class="card">
+              <div class="card-title">Calories</div>
+              <div class="stat-num" id="nut-cal-val">0</div>
+              <div class="card-sub">/ <span id="nut-cal-goal">2000</span> kcal</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-cal-bar" style="background:var(--orange);width:0%"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Protein</div>
+              <div class="stat-num" id="nut-pro-val">0</div>
+              <div class="card-sub">/ <span id="nut-pro-goal">150</span> g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-pro-bar" style="background:var(--blue);width:0%"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Carbs</div>
+              <div class="stat-num" id="nut-carb-val">0</div>
+              <div class="card-sub">/ <span id="nut-carb-goal">250</span> g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-carb-bar" style="background:var(--yellow);width:0%"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Fat</div>
+              <div class="stat-num" id="nut-fat-val">0</div>
+              <div class="card-sub">/ <span id="nut-fat-goal">65</span> g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-fat-bar" style="background:var(--red);width:0%"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Fiber</div>
+              <div class="stat-num" id="nut-fib-val">0</div>
+              <div class="card-sub">/ <span id="nut-fib-goal">30</span> g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-fib-bar" style="background:var(--green);width:0%"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Water</div>
+              <div class="stat-num" id="nut-wat-val">0</div>
+              <div class="card-sub">/ <span id="nut-wat-goal">3000</span> ml</div>
+              <div class="progress-wrap"><div class="progress-bar" id="nut-wat-bar" style="background:var(--cyan);width:0%"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Vitamins & Supplements Today</div>
+            <textarea id="nut-vitamins" placeholder="e.g. Vitamin D 5000IU, Magnesium 400mg, Omega-3..." rows="3"></textarea>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="saveVitamins()">Save</button>
+          </div>
+        </div>
+
+        <!-- Food Log -->
+        <div id="nut-log" style="display:none">
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th><th>Food</th><th>Cal</th><th>P</th><th>C</th><th>F</th><th>Notes</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="nut-log-body">
+                  <tr><td colspan="8" class="empty">No food logged yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div id="nut-photos" style="display:none">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Food Photos</div>
+            <div class="img-grid" id="food-photo-grid">
+              <div class="empty" style="grid-column:1/-1">No food photos yet. Upload when logging food.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ FITNESS ══════════════ -->
+      <div class="page" id="page-fitness">
+        <div class="section-header">
+          <div class="section-title">Fitness Tracker</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('fitness-modal')">+ Log Metrics</button>
+        </div>
+
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Body Weight</div>
+            <div class="stat-num" id="fit-weight">—</div>
+            <div class="card-sub">kg — last entry</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Body Fat %</div>
+            <div class="stat-num" id="fit-bf">—</div>
+            <div class="card-sub">% — last entry</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Muscle Mass</div>
+            <div class="stat-num" id="fit-muscle">—</div>
+            <div class="card-sub">kg — last entry</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Waist</div>
+            <div class="stat-num" id="fit-waist">—</div>
+            <div class="card-sub">cm — last entry</div>
+          </div>
+        </div>
+
+        <!-- Progress Photos -->
+        <div class="section-header">
+          <div class="section-title">Progress Photos</div>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            📷 Upload Photo
+            <input type="file" accept="image/*" style="display:none" onchange="uploadFitnessPhoto(event)">
+          </label>
+        </div>
+
+        <div class="card">
+          <div class="img-grid" id="fitness-photo-grid">
+            <div class="empty" style="grid-column:1/-1">No progress photos yet.</div>
+          </div>
+        </div>
+
+        <!-- Fitness Log Table -->
+        <div class="section-header" style="margin-top:24px">
+          <div class="section-title">Metrics Log</div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Weight (kg)</th><th>Body Fat %</th><th>Muscle (kg)</th><th>Waist (cm)</th><th>Notes</th></tr>
+              </thead>
+              <tbody id="fitness-log-body">
+                <tr><td colspan="6" class="empty">No fitness entries yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ TRADING ══════════════ -->
+      <div class="page" id="page-trading">
+        <div class="section-header">
+          <div class="section-title">Trading Journal</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('trade-modal')">+ Log Trade</button>
+        </div>
+
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Total Trades</div>
+            <div class="stat-num" id="tr-total">0</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Win Rate</div>
+            <div class="stat-num text-green" id="tr-winrate">0%</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Total P&L</div>
+            <div class="stat-num" id="tr-pnl">$0</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Avg Risk:Reward</div>
+            <div class="stat-num" id="tr-rr">0:0</div>
+          </div>
+        </div>
+
+        <!-- Trade Log -->
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Symbol</th><th>Type</th><th>Entry</th><th>Exit</th>
+                  <th>Size</th><th>P&L</th><th>R:R</th><th>Result</th><th>Notes</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="trade-log-body">
+                <tr><td colspan="11" class="empty">No trades logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Trade Screenshots -->
+        <div class="section-header" style="margin-top:24px">
+          <div class="section-title">Trade Screenshots</div>
+        </div>
+        <div class="card">
+          <div class="img-grid" id="trade-photo-grid">
+            <div class="empty" style="grid-column:1/-1">No screenshots yet. Upload when logging trades.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ CHINESE ══════════════ -->
+      <div class="page" id="page-chinese">
+        <div class="section-header">
+          <div class="section-title">Chinese Learning — HSK5/HSK6</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('chinese-modal')">+ Log Session</button>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Total Vocab Learned</div>
+            <div class="stat-num text-accent" id="ch-vocab">0</div>
+            <div class="card-sub">words</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Total Study Hours</div>
+            <div class="stat-num text-blue" id="ch-hours">0</div>
+            <div class="card-sub">hours logged</div>
+          </div>
+          <div class="card">
+            <div class="card-title">This Week</div>
+            <div class="stat-num text-green" id="ch-week">0h</div>
+            <div class="card-sub">study time</div>
+          </div>
+        </div>
+
+        <!-- HSK Progress -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:16px">HSK Level Progress</div>
+          <div id="hsk-levels"></div>
+        </div>
+
+        <!-- Session Log -->
+        <div class="section-header">
+          <div class="section-title">Study Sessions</div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Duration</th><th>Vocab</th><th>HSK Level</th><th>Activity</th><th>Notes</th><th></th></tr>
+              </thead>
+              <tbody id="chinese-log-body">
+                <tr><td colspan="7" class="empty">No sessions logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ AI LEARNING ══════════════ -->
+      <div class="page" id="page-ailearning">
+        <div class="section-header">
+          <div class="section-title">AI & E-commerce Learning</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('ai-modal')">+ Log Progress</button>
+        </div>
+
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">AI Study Hours</div>
+            <div class="stat-num text-accent" id="ai-hours">0</div>
+          </div>
+          <div class="card">
+            <div class="card-title">E-comm Hours</div>
+            <div class="stat-num text-blue" id="ec-hours">0</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Projects Done</div>
+            <div class="stat-num text-green" id="ai-projects">0</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Skills Learned</div>
+            <div class="stat-num text-yellow" id="ai-skills-count">0</div>
+          </div>
+        </div>
+
+        <!-- Skills Tags -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:12px">Skills Learned</div>
+          <div id="skills-tags" style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="color:var(--text3);font-size:13px">No skills logged yet.</span>
+          </div>
+        </div>
+
+        <!-- Log Table -->
+        <div class="section-header">
+          <div class="section-title">Learning Log</div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Category</th><th>Hours</th><th>Project</th><th>Skills</th><th>Notes</th><th></th></tr>
+              </thead>
+              <tbody id="ai-log-body">
+                <tr><td colspan="7" class="empty">No sessions logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ INVESTING ══════════════ -->
+      <div class="page" id="page-investing">
+        <div class="section-header">
+          <div class="section-title">Stock Investing</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="openModal('watchlist-modal')">+ Watchlist</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('invest-modal')">+ Research Note</button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="invTab(this,'inv-portfolio')">Portfolio Notes</div>
+          <div class="tab" onclick="invTab(this,'inv-research')">Research Journal</div>
+          <div class="tab" onclick="invTab(this,'inv-watchlist')">Watchlist</div>
+        </div>
+
+        <!-- Portfolio Notes -->
+        <div id="inv-portfolio">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:10px">Portfolio Notes</div>
+            <textarea id="portfolio-notes-text" placeholder="Document your portfolio strategy, holdings, thesis..." rows="8"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="savePortfolioNotes()">Save Notes</button>
+          </div>
+        </div>
+
+        <!-- Research Journal -->
+        <div id="inv-research" style="display:none">
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Ticker</th><th>Type</th><th>Notes</th><th>Conviction</th><th></th></tr>
+                </thead>
+                <tbody id="research-log-body">
+                  <tr><td colspan="6" class="empty">No research notes yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Watchlist -->
+        <div id="inv-watchlist" style="display:none">
+          <div class="card" id="watchlist-container">
+            <div class="empty"><div class="empty-icon">👀</div>No stocks on watchlist yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ ANALYTICS ══════════════ -->
+      <div class="page" id="page-analytics">
+        <div class="section-header">
+          <div class="section-title">Analytics & Insights</div>
+          <div class="tabs" style="margin-bottom:0;width:auto">
+            <div class="tab active" onclick="analyticsTab(this,'an-week')" style="min-width:70px">Week</div>
+            <div class="tab" onclick="analyticsTab(this,'an-month')" style="min-width:70px">Month</div>
+            <div class="tab" onclick="analyticsTab(this,'an-all')" style="min-width:70px">All</div>
+          </div>
+        </div>
+
+        <!-- Score Trend -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title" style="margin-bottom:16px">Daily Score Trend</div>
+          <div class="chart-wrap">
+            <canvas id="chart-scores" height="180"></canvas>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Goal Completion Rate</div>
+            <div class="chart-wrap">
+              <canvas id="chart-goals" height="180"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Calorie Trend</div>
+            <div class="chart-wrap">
+              <canvas id="chart-calories" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Trading P&L</div>
+            <div class="chart-wrap">
+              <canvas id="chart-pnl" height="180"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Study Hours</div>
+            <div class="chart-wrap">
+              <canvas id="chart-study" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Nutrition Modal -->
+<div class="modal-overlay" id="nutrition-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Log Food</div>
+      <button class="modal-close" onclick="closeModal('nutrition-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Food Name</label>
+      <input type="text" id="nut-food-name" placeholder="e.g. Grilled Chicken Breast">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Calories (kcal)</label>
+        <input type="number" id="nut-food-cal" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Protein (g)</label>
+        <input type="number" id="nut-food-pro" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Carbs (g)</label>
+        <input type="number" id="nut-food-carb" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fat (g)</label>
+        <input type="number" id="nut-food-fat" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fiber (g)</label>
+        <input type="number" id="nut-food-fib" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Water (ml)</label>
+        <input type="number" id="nut-food-wat" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input type="text" id="nut-food-notes" placeholder="Optional notes...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Food Photo</label>
+      <div class="photo-upload">
+        <div style="font-size:28px">📷</div>
+        <div class="photo-upload-label">Tap to upload food photo</div>
+        <input type="file" accept="image/*" id="nut-food-photo" onchange="previewNutPhoto(event)">
+      </div>
+      <img id="nut-photo-preview" src="" style="display:none;width:100%;border-radius:8px;margin-top:8px;max-height:160px;object-fit:cover">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveFood()">Log Food</button>
+  </div>
+</div>
+
+<!-- Fitness Modal -->
+<div class="modal-overlay" id="fitness-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Log Fitness Metrics</div>
+      <button class="modal-close" onclick="closeModal('fitness-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Body Weight (kg)</label>
+        <input type="number" id="fit-f-weight" placeholder="75.5" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Body Fat %</label>
+        <input type="number" id="fit-f-bf" placeholder="15.0" step="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Muscle Mass (kg)</label>
+        <input type="number" id="fit-f-muscle" placeholder="60.0" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Waist (cm)</label>
+        <input type="number" id="fit-f-waist" placeholder="80" step="0.5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="fit-f-notes" placeholder="How you're feeling, workout notes..." rows="3"></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveFitness()">Save Metrics</button>
+  </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal-overlay" id="trade-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Log Trade</div>
+      <button class="modal-close" onclick="closeModal('trade-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Symbol</label>
+        <input type="text" id="tr-symbol" placeholder="BTC, AAPL...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="tr-type">
+          <option>Long</option>
+          <option>Short</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Entry Price</label>
+        <input type="number" id="tr-entry" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exit Price</label>
+        <input type="number" id="tr-exit" placeholder="0.00" step="0.01">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Position Size ($)</label>
+        <input type="number" id="tr-size" placeholder="1000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Risk:Reward</label>
+        <input type="text" id="tr-rr" placeholder="1:2">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Trade Notes</label>
+      <textarea id="tr-notes" placeholder="Setup, emotions, lessons..." rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Screenshot</label>
+      <div class="photo-upload">
+        <div style="font-size:28px">📸</div>
+        <div class="photo-upload-label">Upload chart screenshot</div>
+        <input type="file" accept="image/*" id="tr-screenshot" onchange="previewTradePhoto(event)">
+      </div>
+      <img id="tr-photo-preview" src="" style="display:none;width:100%;border-radius:8px;margin-top:8px;max-height:160px;object-fit:cover">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveTrade()">Log Trade</button>
+  </div>
+</div>
+
+<!-- Chinese Modal -->
+<div class="modal-overlay" id="chinese-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Log Study Session</div>
+      <button class="modal-close" onclick="closeModal('chinese-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Study Duration (mins)</label>
+        <input type="number" id="ch-duration" placeholder="60">
+      </div>
+      <div class="form-group">
+        <label class="form-label">HSK Level</label>
+        <select id="ch-hsk">
+          <option>HSK 1</option><option>HSK 2</option><option>HSK 3</option>
+          <option>HSK 4</option><option selected>HSK 5</option><option>HSK 6</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Vocabulary Learned</label>
+        <input type="number" id="ch-vocab-new" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Activity Type</label>
+        <select id="ch-activity">
+          <option>Reading</option><option>Listening</option><option>Speaking</option>
+          <option>Writing</option><option>Flashcards</option><option>Grammar</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="ch-notes" placeholder="What did you study? Key takeaways..." rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">HSK 5 Progress % (cumulative)</label>
+      <input type="number" id="ch-hsk5-pct" placeholder="0" min="0" max="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">HSK 6 Progress % (cumulative)</label>
+      <input type="number" id="ch-hsk6-pct" placeholder="0" min="0" max="100">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveChinese()">Save Session</button>
+  </div>
+</div>
+
+<!-- AI Modal -->
+<div class="modal-overlay" id="ai-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Log Learning Progress</div>
+      <button class="modal-close" onclick="closeModal('ai-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="ai-cat">
+          <option>AI Skills</option><option>E-commerce Skills</option><option>Both</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hours</label>
+        <input type="number" id="ai-dur" placeholder="2" step="0.5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Project Completed</label>
+      <input type="text" id="ai-project" placeholder="e.g. Built chatbot, Set up Shopify store...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Skills Learned (comma separated)</label>
+      <input type="text" id="ai-skills-new" placeholder="e.g. LangChain, Prompt Engineering, Dropshipping...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="ai-notes" placeholder="Key takeaways, resources used..." rows="3"></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveAI()">Save Progress</button>
+  </div>
+</div>
+
+<!-- Invest Modal -->
+<div class="modal-overlay" id="invest-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Research Note</div>
+      <button class="modal-close" onclick="closeModal('invest-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Ticker</label>
+        <input type="text" id="inv-ticker" placeholder="AAPL">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="inv-type">
+          <option>Bullish</option><option>Bearish</option><option>Neutral</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Conviction Level</label>
+      <select id="inv-conviction">
+        <option>Low</option><option>Medium</option><option>High</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Research Notes</label>
+      <textarea id="inv-notes" placeholder="Thesis, catalysts, risks, valuation..." rows="5"></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveResearch()">Save Note</button>
+  </div>
+</div>
+
+<!-- Watchlist Modal -->
+<div class="modal-overlay" id="watchlist-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add to Watchlist</div>
+      <button class="modal-close" onclick="closeModal('watchlist-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Ticker</label>
+        <input type="text" id="wl-ticker" placeholder="NVDA">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Price</label>
+        <input type="number" id="wl-target" placeholder="0.00" step="0.01">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input type="text" id="wl-notes" placeholder="Why watching this?">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveWatchlist()">Add to Watchlist</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast">✓ Saved</div>
+
+<script>
+// ══════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════
+
+const DB = {
+  get: k => { try { return JSON.parse(localStorage.getItem('lifeos_'+k)) || null; } catch { return null; } },
+  set: (k, v) => { localStorage.setItem('lifeos_'+k, JSON.stringify(v)); },
+  push: (k, item) => { const arr = DB.get(k) || []; arr.push(item); DB.set(k, arr); },
+  del: (k, idx) => { const arr = DB.get(k) || []; arr.splice(idx,1); DB.set(k, arr); }
 };
 
-const todayStr = () => new Date().toISOString().split("T")[0];
-const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-function useLS(key, def) {
-  const [v,setV] = useState(()=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):def;}catch{return def;}});
-  const save = useCallback((val)=>{const next=typeof val==="function"?val(v):val;setV(next);localStorage.setItem(key,JSON.stringify(next));},[key,v]);
-  return [v,save];
-}
-
-function calcScore(r,j){
-  let s=0,max=0;
-  const add=(val,pts)=>{max+=pts;if(val)s+=pts;};
-  add(r.prayer,10);add(r.bibleReading,10);add(r.gratitude,5);
-  add(r.weights||r.cardio,15);add(r.drinkWater,5);add(r.makeBed,3);
-  add(r.noSocialMedia,7);add(j&&j.proteinGoal,10);add(j&&j.caloriesGoal,5);
-  add((j&&j.tradingHours||0)>=1,10);add((j&&j.chineseHours||0)>=1,10);
-  add(j&&(j.sleepQuality||0)>=7,5);add(r.reflection,5);
-  return max>0?Math.round((s/max)*100):0;
-}
-
-// ── UI ATOMS ──
-const Card=({children,style={},className=""})=>React.createElement("div",{className:"slide-in "+className,style:{background:C.card,border:"1px solid "+C.border,borderRadius:12,padding:20,...style}},children);
-const CT=({icon,title,color=C.accent})=>React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16}},[
-  React.createElement("span",{key:"i",style:{color,fontSize:16}},icon),
-  React.createElement("span",{key:"t",style:{fontSize:13,fontWeight:700,color,letterSpacing:".08em",textTransform:"uppercase"}},title)
-]);
-const Pill=({children,color=C.accent})=>React.createElement("span",{style:{background:color+"22",color,border:"1px solid "+color+"44",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600}},children);
-const PBar=({value,max=100,color=C.accent,label,showPct=true})=>React.createElement("div",{style:{marginBottom:8}},[
-  label&&React.createElement("div",{key:"lbl",style:{display:"flex",justifyContent:"space-between",marginBottom:4}},[
-    React.createElement("span",{key:"l",style:{fontSize:12,color:C.muted}},label),
-    showPct&&React.createElement("span",{key:"p",style:{fontSize:12,color,fontFamily:"JetBrains Mono"}},Math.round((value/max)*100)+"%")
-  ]),
-  React.createElement("div",{key:"track",style:{background:C.dim,borderRadius:4,height:6,overflow:"hidden"}},
-    React.createElement("div",{style:{width:Math.min((value/max)*100,100)+"%",background:color,height:"100%",borderRadius:4,transition:"width .5s ease"}})
-  )
-]);
-const Btn=({onClick,children,color=C.accent,style={}})=>React.createElement("button",{onClick,style:{background:color,color:"#000",border:"1px solid "+color,borderRadius:7,padding:"8px 16px",fontSize:12,fontWeight:700,...style}},children);
-
-// ── DASHBOARD ──
-function DashboardHome({journal,routine,goals}){
-  const k=todayStr();
-  const j=journal[k]||{};const r=routine[k]||{};
-  const score=calcScore(r,j);
-  const sc=score>=90?C.green:score>=75?C.accent:score>=60?C.yellow:C.red;
-  const sl=score>=90?"EXCELLENT":score>=75?"GOOD":score>=60?"AVERAGE":"POOR";
-  const week=Array.from({length:7},(_,i)=>{
-    const d=new Date();d.setDate(d.getDate()-(6-i));
-    const dk=d.toISOString().split("T")[0];
-    return{name:DAYS[d.getDay()],score:calcScore(routine[dk]||{},journal[dk]||{})};
-  });
-  const times=[
-    {name:"Trading",hours:j.tradingHours||0,color:C.gold},
-    {name:"Chinese",hours:j.chineseHours||0,color:C.accent},
-    {name:"English",hours:j.englishHours||0,color:C.purple},
-    {name:"AI/Biz",hours:j.aiHours||0,color:C.green},
-    {name:"Workout",hours:j.workoutHours||0,color:C.red},
-    {name:"Social",hours:j.socialHours||0,color:C.muted},
-  ].filter(d=>d.hours>0).sort((a,b)=>b.hours-a.hours);
-  const GOALS=[
-    {key:"sixpack",label:"Six Pack",color:C.red},
-    {key:"funded",label:"$100K Funded",color:C.gold},
-    {key:"withdrawal",label:"$10K Withdrawal",color:C.green},
-    {key:"hsk",label:"HSK 5/6",color:C.accent},
-    {key:"bible",label:"Closer to God",color:C.purple},
-  ];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    // Score card
-    React.createElement(Card,{key:"score",style:{gridColumn:"1/-1",background:"linear-gradient(135deg,"+C.card+","+C.surface+")"}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16}},[
-        React.createElement("div",{key:"left"},[
-          React.createElement("div",{key:"lbl",style:{fontSize:11,color:C.muted,letterSpacing:".1em",textTransform:"uppercase",marginBottom:4}},"Today's Life Score — "+k),
-          React.createElement("div",{key:"num",style:{fontSize:72,fontWeight:800,color:sc,lineHeight:1,fontFamily:"JetBrains Mono"}},score),
-          React.createElement(Pill,{key:"pill",color:sc},sl)
-        ]),
-        React.createElement("div",{key:"chart",style:{flex:1,minWidth:200,height:80}},
-          React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
-            React.createElement(LineChart,{data:week},[
-              React.createElement(Line,{key:"l",type:"monotone",dataKey:"score",stroke:C.accent,strokeWidth:2,dot:false}),
-              React.createElement(XAxis,{key:"x",dataKey:"name",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
-              React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
-            ])
-          )
-        )
-      ])
-    ),
-    // Vision
-    React.createElement(Card,{key:"vision",style:{background:"linear-gradient(135deg,#0d1117,#161a22)",border:"1px solid "+C.gold+"33"}},
-      [React.createElement(CT,{key:"ct",icon:"✦",title:"My Vision",color:C.gold}),
-      React.createElement("div",{key:"list",style:{fontSize:13,lineHeight:1.8}},
-        ["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map(v=>
-          React.createElement("div",{key:v,style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},[
-            React.createElement("span",{key:"a",style:{color:C.gold}},"→"),v
-          ])
-        )
-      ),
-      React.createElement("div",{key:"quote",style:{marginTop:16,padding:"12px 16px",background:C.gold+"11",borderLeft:"3px solid "+C.gold,borderRadius:4,fontSize:12,color:C.gold,fontStyle:"italic"}},
-        '"Am I becoming the person I said I wanted to become?"'
-      )]
-    ),
-    // Time today
-    React.createElement(Card,{key:"time"},
-      [React.createElement(CT,{key:"ct",icon:"⏱",title:"Time Today",color:C.accent}),
-      times.length===0?
-        React.createElement("div",{key:"empty",style:{color:C.muted,fontSize:12}},"No time logged yet. Update your Journal."):
-        times.map((d,i)=>
-          React.createElement("div",{key:d.name,style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},[
-            React.createElement("div",{key:"n",style:{width:24,fontSize:11,color:C.muted,fontFamily:"JetBrains Mono"}},"#"+(i+1)),
-            React.createElement("div",{key:"nm",style:{flex:1,fontSize:13}},d.name),
-            React.createElement("div",{key:"h",style:{fontFamily:"JetBrains Mono",fontSize:12,color:d.color,minWidth:48,textAlign:"right"}},d.hours+"h"),
-            React.createElement("div",{key:"bar",style:{width:80,background:C.dim,borderRadius:3,height:5}},
-              React.createElement("div",{style:{width:(d.hours/(times[0]?.hours||1))*100+"%",background:d.color,height:"100%",borderRadius:3}})
-            )
-          ])
-        )
-      ]
-    ),
-    // Goals
-    React.createElement(Card,{key:"goals"},
-      [React.createElement(CT,{key:"ct",icon:"🎯",title:"2026 Goals",color:C.green}),
-      GOALS.map(g=>React.createElement(PBar,{key:g.key,label:g.label,value:goals[g.key]||0,max:100,color:g.color}))
-      ]
-    ),
-    // Fears
-    React.createElement(Card,{key:"fears",style:{border:"1px solid "+C.red+"33"}},
-      [React.createElement(CT,{key:"ct",icon:"⚡",title:"Remember Your Fears",color:C.red}),
-      ["Wasting my potential","Being lazy","Financial failure","Emotional trading","Not reaching my goals","Drifting from God"].map(f=>
-        React.createElement("div",{key:f,style:{display:"flex",gap:8,marginBottom:6,fontSize:12,color:C.muted}},[
-          React.createElement("span",{key:"a",style:{color:C.red}},"▸"),f
-        ])
-      )]
-    )
-  ]);
-}
-
-// ── ROUTINE ──
-const ROUTINE=[
-  {time:"06:30",label:"Wake Up",items:[{key:"drinkWater",label:"Drink Water"},{key:"makeBed",label:"Make Bed"},{key:"noSocialMedia",label:"No Social Media"}]},
-  {time:"06:40",label:"God Time",items:[{key:"prayer",label:"Prayer"},{key:"bibleReading",label:"Bible Reading"},{key:"gratitude",label:"Gratitude"}]},
-  {time:"07:00",label:"Workout",items:[{key:"weights",label:"Weights"},{key:"cardio",label:"Cardio"}]},
-  {time:"08:00",label:"Breakfast",items:[{key:"healthyBreakfast",label:"Healthy Breakfast"}]},
-  {time:"09:00",label:"Trading Study",items:[{key:"tradingStudy",label:"Trading Study"}]},
-  {time:"13:00",label:"Language",items:[{key:"chineseStudy",label:"Chinese Study"},{key:"englishStudy",label:"English Study"}]},
-  {time:"15:00",label:"Learning",items:[{key:"aiLearning",label:"AI Learning"},{key:"businessLearning",label:"Business Learning"}]},
-  {time:"17:00",label:"Walking",items:[{key:"walking",label:"Walking"}]},
-  {time:"21:00",label:"Night",items:[{key:"reflection",label:"Reflection"},{key:"nightPrayer",label:"Night Prayer"}]},
-  {time:"22:00",label:"Sleep",items:[{key:"sleep",label:"Sleep on time"}]},
+// ── Goals definition ──
+const GOALS = [
+  { id:'sixpack',   name:'Six Pack',           icon:'🔥', color:'bg-orange', pts:5 },
+  { id:'weightloss',name:'Weight Loss',         icon:'⚖️', color:'bg-blue',   pts:4 },
+  { id:'muscle',    name:'Muscle Gain',          icon:'💪', color:'bg-red',    pts:4 },
+  { id:'trading',   name:'Trading',              icon:'📈', color:'bg-green',  pts:6 },
+  { id:'chinese',   name:'Chinese (HSK5-HSK6)',  icon:'🀄', color:'bg-purple', pts:5 },
+  { id:'aiskills',  name:'AI Skills',            icon:'🤖', color:'bg-cyan',   pts:5 },
+  { id:'ecomm',     name:'E-commerce Skills',    icon:'🛒', color:'bg-yellow', pts:5 },
+  { id:'stocks',    name:'Stock Investing',      icon:'💹', color:'bg-green',  pts:4 },
+  { id:'laodigi',   name:'Lao Digital Project',  icon:'🌏', color:'bg-blue',   pts:5 },
+  { id:'gym',       name:'Gym',                  icon:'🏋️', color:'bg-orange', pts:5 },
+  { id:'running',   name:'Running',              icon:'🏃', color:'bg-cyan',   pts:4 },
+  { id:'wakeup',    name:'Wake Up Early',        icon:'🌅', color:'bg-yellow', pts:3 },
+  { id:'sleep',     name:'Sleep On Time',        icon:'🌙', color:'bg-purple', pts:3 },
+  { id:'bible',     name:'Bible Reading',        icon:'📖', color:'bg-green',  pts:4 },
+  { id:'prayer',    name:'Prayer',               icon:'🙏', color:'bg-pink',   pts:4 },
 ];
 
-function RoutinePage({routine,setRoutine}){
-  const k=todayStr();const r=routine[k]||{};
-  const toggle=f=>setRoutine(p=>({...p,[k]:{...(p[k]||{}),[f]:!((p[k]||{})[f])}}));
-  const all=ROUTINE.flatMap(s=>s.items);
-  const done=all.filter(i=>r[i.key]).length;
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"hdr",style:{gridColumn:"1/-1"}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},[
-        React.createElement("div",{key:"info"},[
-          React.createElement("div",{key:"sub",style:{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}},"Today's Routine"),
-          React.createElement("div",{key:"num",style:{fontSize:28,fontWeight:800,color:C.accent,fontFamily:"JetBrains Mono"}},done+"/"+all.length+" ",React.createElement("span",{style:{fontSize:14,color:C.muted}},"completed"))
-        ]),
-        React.createElement("div",{key:"pb",style:{width:140}},React.createElement(PBar,{value:done,max:all.length,color:done===all.length?C.green:C.accent}))
-      ])
-    ),
-    ...ROUTINE.map(block=>
-      React.createElement(Card,{key:block.time},
-        [React.createElement("div",{key:"hd",style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},[
-          React.createElement("div",{key:"t",style:{background:C.accent+"22",color:C.accent,padding:"3px 8px",borderRadius:5,fontFamily:"JetBrains Mono",fontSize:11,fontWeight:600}},block.time),
-          React.createElement("div",{key:"l",style:{fontSize:13,fontWeight:700}},block.label)
-        ]),
-        ...block.items.map(item=>
-          React.createElement("label",{key:item.key,style:{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:8,textTransform:"none",letterSpacing:0}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!r[item.key],onChange:()=>toggle(item.key),style:{accentColor:C.accent}}),
-            React.createElement("span",{key:"lbl",style:{fontSize:13,color:r[item.key]?C.green:C.text}},item.label),
-            r[item.key]&&React.createElement("span",{key:"ck",style:{fontSize:11,color:C.green}},"✓")
-          ])
-        )]
-      )
-    )
-  ]);
+const MAX_SCORE = GOALS.reduce((s,g) => s + g.pts, 0);
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+function getGoalsForDate(date) {
+  const key = 'goals_' + date;
+  return DB.get(key) || {};
 }
 
-// ── DAILY JOURNAL ──
-function JournalPage({journal,setJournal}){
-  const k=todayStr();const e=journal[k]||{};
-  const set=(f,v)=>setJournal(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"top",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"📔",title:"Daily Journal",color:C.accent}),
-      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}},
-        [["wakeUp","Wake Up Time","time"],["sleepTime","Planned Sleep","time"]].map(([f,l,t])=>
-          React.createElement("div",{key:f},[
-            React.createElement("label",{key:"lbl"},l),
-            React.createElement("input",{key:"inp",type:t,value:e[f]||"",onChange:ev=>set(f,ev.target.value)})
-          ])
-        ).concat([
-          React.createElement("div",{key:"mood"},[
-            React.createElement("label",{key:"l"},"Mood (1-10)"),
-            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.mood||5,onChange:ev=>set("mood",+ev.target.value),style:{accentColor:C.accent}}),
-            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.accent,fontFamily:"JetBrains Mono",fontSize:13}},(e.mood||5)+"/10")
-          ]),
-          React.createElement("div",{key:"energy"},[
-            React.createElement("label",{key:"l"},"Energy (1-10)"),
-            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.energy||5,onChange:ev=>set("energy",+ev.target.value),style:{accentColor:C.gold}}),
-            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.gold,fontFamily:"JetBrains Mono",fontSize:13}},(e.energy||5)+"/10")
-          ]),
-          React.createElement("div",{key:"sleep"},[
-            React.createElement("label",{key:"l"},"Sleep Quality (1-10)"),
-            React.createElement("input",{key:"r",type:"range",min:1,max:10,value:e.sleepQuality||5,onChange:ev=>set("sleepQuality",+ev.target.value),style:{accentColor:C.purple}}),
-            React.createElement("div",{key:"v",style:{textAlign:"center",color:C.purple,fontFamily:"JetBrains Mono",fontSize:13}},(e.sleepQuality||5)+"/10")
-          ])
-        ])
-      )]
-    ),
-    ...[["todayWins","🏆 Today's Wins",C.green],["todayMistakes","⚠️ Today's Mistakes",C.red],["lessonsLearned","💡 Lessons Learned",C.gold],["tomorrowFocus","🎯 Tomorrow's Focus",C.accent]].map(([f,l,c])=>
-      React.createElement(Card,{key:f},[
-        React.createElement(CT,{key:"ct",icon:l.split(" ")[0],title:l.split(" ").slice(1).join(" "),color:c}),
-        React.createElement("textarea",{key:"ta",value:e[f]||"",onChange:ev=>set(f,ev.target.value),placeholder:"Write here..."})
-      ])
-    ),
-    React.createElement(Card,{key:"time"},
-      [React.createElement(CT,{key:"ct",icon:"⏱",title:"Time Tracker",color:C.accent}),
-      ...[["tradingHours","Trading Hours"],["chineseHours","Chinese (hrs)"],["englishHours","English (hrs)"],["aiHours","AI/Business (hrs)"],["workoutHours","Workout (hrs)"],["socialHours","Social Media (hrs)"]].map(([f,l])=>
-        React.createElement("div",{key:f,style:{marginBottom:10}},[
-          React.createElement("label",{key:"lbl"},l),
-          React.createElement("input",{key:"inp",type:"number",min:0,max:24,step:0.25,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})
-        ])
-      )]
-    ),
-    React.createElement(Card,{key:"nut"},
-      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Nutrition",color:C.green}),
-      ...[["protein","Protein (g)"],["calories","Calories"],["water","Water (L)"]].map(([f,l])=>
-        React.createElement("div",{key:f,style:{marginBottom:10}},[
-          React.createElement("label",{key:"l"},l),
-          React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})
-        ])
-      ),
-      React.createElement("div",{key:"checks",style:{display:"flex",gap:12,marginTop:8}},
-        [["proteinGoal","Protein Goal ✓"],["caloriesGoal","Calories Goal ✓"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,flex:1}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.green}}),
-            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.green:C.muted}},l)
-          ])
-        )
-      )]
-    )
-  ]);
+function setGoalsForDate(date, data) {
+  DB.set('goals_' + date, data);
 }
 
-// ── FOOD JOURNAL ──
-function FoodPage({food,setFood}){
-  const k=todayStr();const e=food[k]||{};
-  const set=(f,v)=>setFood(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
-  const nc=e.proteinGoal&&e.caloriesGoal&&(e.healthyMeals||0)>=3?{color:C.green,label:"🟢 Great Nutrition Day"}:
-           e.proteinGoal||e.caloriesGoal?{color:C.yellow,label:"🟡 Average Nutrition Day"}:{color:C.red,label:"🔴 Poor Nutrition Day"};
-  const handlePhoto=(meal,file)=>{if(!file)return;const r=new FileReader();r.onload=ev=>set(meal+"Photo",ev.target.result);r.readAsDataURL(file);};
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"hdr",style:{gridColumn:"1/-1"}},
-      [React.createElement("div",{key:"top",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},[
-        React.createElement(CT,{key:"ct",icon:"🍽️",title:"Food Journal",color:C.green}),
-        React.createElement(Pill,{key:"pill",color:nc.color},nc.label)
-      ]),
-      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:12}},
-        [["protein","Protein (g)"],["calories","Calories"],["water","Water (L)"],["healthyMeals","Healthy Meals"]].map(([f,l])=>
-          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-        )
-      ),
-      React.createElement("div",{key:"checks",style:{display:"flex",gap:16,marginTop:12}},
-        [["proteinGoal","Protein Goal"],["caloriesGoal","Calories Goal"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:8,cursor:"pointer",textTransform:"none",letterSpacing:0}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.green}}),
-            React.createElement("span",{key:"s",style:{fontSize:13,color:e[f]?C.green:C.muted}},l+": "),
-            React.createElement("strong",{key:"v",style:{color:e[f]?C.green:C.red}},e[f]?"YES":"NO")
-          ])
-        )
-      )]
-    ),
-    ...[["breakfast","🌅 Breakfast",C.gold],["lunch","☀️ Lunch",C.accent],["dinner","🌙 Dinner",C.purple],["snacks","🍎 Snacks",C.green]].map(([meal,label,color])=>
-      React.createElement(Card,{key:meal},[
-        React.createElement(CT,{key:"ct",icon:label.split(" ")[0],title:label.split(" ")[1],color}),
-        React.createElement("textarea",{key:"ta",placeholder:"What did you eat?",value:e[meal]||"",onChange:ev=>set(meal,ev.target.value)}),
-        React.createElement("div",{key:"photo",style:{marginTop:10}},[
-          React.createElement("label",{key:"l"},"Photo"),
-          React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>handlePhoto(meal,ev.target.files[0])}),
-          e[meal+"Photo"]&&React.createElement("img",{key:"img",src:e[meal+"Photo"],style:{width:"100%",borderRadius:8,marginTop:8,maxHeight:180,objectFit:"cover"}})
-        ])
-      ])
-    ),
-    React.createElement(Card,{key:"notes"},
-      [React.createElement(CT,{key:"ct",icon:"📝",title:"Daily Notes",color:C.muted}),
-      React.createElement("textarea",{key:"ta",placeholder:"How did you feel? Cravings? Notes...",value:e.notes||"",onChange:ev=>set("notes",ev.target.value),style:{minHeight:100}})]
-    )
-  ]);
+function computeScore(date) {
+  const done = getGoalsForDate(date);
+  let score = 0;
+  GOALS.forEach(g => { if (done[g.id]) score += g.pts; });
+  return Math.round((score / MAX_SCORE) * 100);
 }
 
-// ── FITNESS ──
-function FitnessPage({fitness,setFitness}){
-  const k=todayStr();const e=fitness[k]||{};
-  const set=(f,v)=>setFitness(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
-  const hist=Object.entries(fitness).sort().slice(-8).map(([d,v])=>({date:d.slice(5),weight:v.weight||0}));
-  const handlePhoto=(file)=>{if(!file)return;const r=new FileReader();r.onload=ev=>set("progressPhoto",ev.target.result);r.readAsDataURL(file);};
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"stats",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"💪",title:"Body Stats",color:C.red}),
-      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:12}},
-        [["weight","Weight (kg)"],["bodyfat","Body Fat %"],["chest","Chest (cm)"],["waist","Waist (cm)"],["arms","Arms (cm)"]].map(([f,l])=>
-          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",step:0.1,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-        )
-      ),
-      React.createElement("div",{key:"sixpack",style:{marginTop:16}},[
-        React.createElement("label",{key:"l"},"Six Pack Progress"),
-        React.createElement("input",{key:"r",type:"range",min:0,max:100,value:e.sixpack||0,onChange:ev=>set("sixpack",+ev.target.value),style:{accentColor:C.red,width:"100%"}}),
-        React.createElement("div",{key:"vals",style:{display:"flex",justifyContent:"space-between",fontSize:11,color:C.muted}},[
-          React.createElement("span",{key:"s"},"Starting"),
-          React.createElement("span",{key:"v",style:{color:C.red,fontWeight:700,fontFamily:"JetBrains Mono"}},(e.sixpack||0)+"%"),
-          React.createElement("span",{key:"e"},"Six Pack ✓")
-        ])
-      ])]
-    ),
-    hist.length>1&&React.createElement(Card,{key:"chart",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"📈",title:"Weight History",color:C.accent}),
-      React.createElement("div",{key:"c",style:{height:150}},
-        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
-          React.createElement(LineChart,{data:hist},[
-            React.createElement(Line,{key:"l",type:"monotone",dataKey:"weight",stroke:C.accent,strokeWidth:2,dot:{fill:C.accent,r:3}}),
-            React.createElement(XAxis,{key:"x",dataKey:"date",tick:{fill:C.muted,fontSize:10},axisLine:false,tickLine:false}),
-            React.createElement(YAxis,{key:"y",tick:{fill:C.muted,fontSize:10},axisLine:false,tickLine:false,domain:["auto","auto"]}),
-            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
-          ])
-        )
-      )]
-    ),
-    React.createElement(Card,{key:"workout"},
-      [React.createElement(CT,{key:"ct",icon:"🏋️",title:"Today's Workout",color:C.gold}),
-      React.createElement("textarea",{key:"ta",placeholder:"Exercises, sets, reps, weights...",value:e.workoutLog||"",onChange:ev=>set("workoutLog",ev.target.value)}),
-      React.createElement("div",{key:"checks",style:{display:"flex",gap:10,marginTop:10}},
-        [["weights","Weights"],["cardio","Cardio"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.gold}}),
-            React.createElement("span",{key:"s",style:{fontSize:13}},l)
-          ])
-        )
-      )]
-    ),
-    React.createElement(Card,{key:"nut"},
-      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Nutrition",color:C.green}),
-      ...[["calories","Calories"],["protein","Protein (g)"],["water","Water (L)"]].map(([f,l])=>
-        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-      ),
-      React.createElement(PBar,{key:"pb1",label:"Protein Goal (150g)",value:e.protein||0,max:150,color:C.green}),
-      React.createElement(PBar,{key:"pb2",label:"Water Goal (3L)",value:(e.water||0)*33.3,max:100,color:C.accent})]
-    ),
-    React.createElement(Card,{key:"photo"},
-      [React.createElement(CT,{key:"ct",icon:"📸",title:"Progress Photo",color:C.purple}),
-      React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>handlePhoto(ev.target.files[0]),style:{marginBottom:10}}),
-      e.progressPhoto?
-        React.createElement("img",{key:"img",src:e.progressPhoto,style:{width:"100%",borderRadius:8,maxHeight:220,objectFit:"cover"}}):
-        React.createElement("div",{key:"ph",style:{height:120,background:C.dim,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:12}},"Upload Progress Photo")
-      ]
-    )
-  ]);
+function computeWeekScore() {
+  const scores = [];
+  for (let i=0; i<7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    scores.push(computeScore(d.toISOString().slice(0,10)));
+  }
+  return Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
 }
 
-// ── TRADING ──
-function TradingPage({trades,setTrades}){
-  const emptyForm={date:todayStr(),pair:"",setup:"",entry:"",sl:"",tp:"",risk:"",result:"",emotion_before:"",emotion_after:"",lesson:"",mistake:""};
-  const [form,setForm]=useState(emptyForm);
-  const [img,setImg]=useState(null);
-  const submit=()=>{
-    if(!form.pair)return;
-    setTrades(p=>[...p,{...form,screenshot:img,id:Date.now()}]);
-    setForm(emptyForm);setImg(null);
+function computeMonthScore() {
+  const scores = [];
+  for (let i=0; i<30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    scores.push(computeScore(d.toISOString().slice(0,10)));
+  }
+  return Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+}
+
+function computeStreak() {
+  let streak = 0;
+  for (let i=0; i<365; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const s = computeScore(d.toISOString().slice(0,10));
+    if (s >= 50) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+
+function getGoalStreak(goalId) {
+  let streak = 0;
+  for (let i=0; i<365; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const done = getGoalsForDate(d.toISOString().slice(0,10));
+    if (done[goalId]) streak++;
+    else if (i > 0) break;
+  }
+  return streak;
+}
+
+// ══════════════════════════════════════
+// UI UTILS
+// ══════════════════════════════════════
+
+function showToast(msg = '✓ Saved') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+function setRing(id, pct, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const circumference = 314;
+  const offset = circumference - (pct / 100) * circumference;
+  el.style.strokeDashoffset = offset;
+  el.style.stroke = color || 'var(--accent)';
+}
+
+function getScoreColor(s) {
+  if (s >= 80) return 'var(--green)';
+  if (s >= 50) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+
+const PAGE_TITLES = {
+  dashboard: 'Dashboard',
+  journal: 'Daily Journal',
+  goals: 'Life Goals',
+  nutrition: 'Nutrition Tracker',
+  fitness: 'Fitness Tracker',
+  trading: 'Trading Journal',
+  investing: 'Stock Investing',
+  chinese: 'Chinese Learning',
+  ailearning: 'AI & E-commerce',
+  analytics: 'Analytics',
+};
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+  closeSidebar();
+  renderPage(page);
+}
+
+function renderPage(page) {
+  switch(page) {
+    case 'dashboard':  renderDashboard(); break;
+    case 'journal':    renderJournal(); break;
+    case 'goals':      renderGoals(); break;
+    case 'nutrition':  renderNutrition(); break;
+    case 'fitness':    renderFitness(); break;
+    case 'trading':    renderTrading(); break;
+    case 'chinese':    renderChinese(); break;
+    case 'ailearning': renderAI(); break;
+    case 'investing':  renderInvesting(); break;
+    case 'analytics':  renderAnalytics(); break;
+  }
+}
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+
+function renderDashboard() {
+  const t = today();
+  const daily = computeScore(t);
+  const weekly = computeWeekScore();
+  const monthly = computeMonthScore();
+  const streak = computeStreak();
+
+  document.getElementById('daily-score').textContent = daily;
+  document.getElementById('weekly-score').textContent = weekly;
+  document.getElementById('monthly-score').textContent = monthly;
+  document.getElementById('dash-streak').textContent = `🔥 ${streak} day streak`;
+
+  setTimeout(() => {
+    setRing('daily-ring', daily, getScoreColor(daily));
+    setRing('weekly-ring', weekly, getScoreColor(weekly));
+    setRing('monthly-ring', monthly, getScoreColor(monthly));
+  }, 50);
+
+  // Goals done today
+  const done = getGoalsForDate(t);
+  const doneCount = GOALS.filter(g => done[g.id]).length;
+  document.getElementById('dash-goals-done').textContent = `${doneCount}/${GOALS.length}`;
+  document.getElementById('dash-goals-bar').style.width = (doneCount / GOALS.length * 100) + '%';
+
+  // Today's goals list
+  const list = document.getElementById('dash-goals-list');
+  list.innerHTML = GOALS.map(g => `
+    <div class="goal-item">
+      <div class="goal-left">
+        <div class="goal-icon ${g.color}">${g.icon}</div>
+        <div>
+          <div class="goal-name">${g.name}</div>
+          <div class="goal-streak">+${g.pts} pts</div>
+        </div>
+      </div>
+      <div class="check-toggle ${done[g.id] ? 'checked' : ''}" 
+           onclick="toggleGoal('${g.id}', this)">
+        ${done[g.id] ? '✓' : ''}
+      </div>
+    </div>
+  `).join('');
+
+  // Quick stats
+  const nutToday = getNutritionToday();
+  document.getElementById('dash-cal').textContent = nutToday.cal ? nutToday.cal + ' kcal' : '—';
+  document.getElementById('dash-water').textContent = nutToday.water ? nutToday.water + ' ml' : '—';
+
+  const fitLog = DB.get('fitness_log') || [];
+  if (fitLog.length) {
+    const last = fitLog[fitLog.length-1];
+    document.getElementById('dash-weight').textContent = last.weight ? last.weight + ' kg' : '—';
+  }
+
+  const trades = DB.get('trades') || [];
+  const monthPnl = trades.reduce((s,tr) => {
+    if (tr.date && tr.date.startsWith(today().slice(0,7))) return s + (parseFloat(tr.pnl)||0);
+    return s;
+  }, 0);
+  const d = monthPnl >= 0 ? '+' : '';
+  document.getElementById('dash-pnl').textContent = trades.length ? `$${d}${monthPnl.toFixed(0)}` : '—';
+  document.getElementById('dash-pnl').style.color = monthPnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const wins = trades.filter(t => t.result === 'Win').length;
+  document.getElementById('dash-winrate').textContent = trades.length ? Math.round(wins/trades.length*100)+'%' : '—';
+
+  const chLog = DB.get('chinese_log') || [];
+  const aiLog = DB.get('ai_log') || [];
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const wStr = weekAgo.toISOString().slice(0,10);
+  const studyH = [...chLog, ...aiLog].filter(x => x.date >= wStr)
+    .reduce((s,x) => s + (parseFloat(x.hours||x.duration/60||0)), 0);
+  document.getElementById('dash-study').textContent = studyH ? studyH.toFixed(1) + 'h' : '—';
+}
+
+function toggleGoal(id, el) {
+  const t = today();
+  const done = getGoalsForDate(t);
+  done[id] = !done[id];
+  setGoalsForDate(t, done);
+  el.classList.toggle('checked');
+  el.textContent = done[id] ? '✓' : '';
+  // re-render scores
+  const daily = computeScore(t);
+  document.getElementById('daily-score').textContent = daily;
+  setRing('daily-ring', daily, getScoreColor(daily));
+  const dc = GOALS.filter(g => done[g.id]).length;
+  document.getElementById('dash-goals-done').textContent = `${dc}/${GOALS.length}`;
+  document.getElementById('dash-goals-bar').style.width = (dc/GOALS.length*100)+'%';
+  document.getElementById('dash-streak').textContent = `🔥 ${computeStreak()} day streak`;
+}
+
+function saveTodayGoals() { showToast('Goals saved!'); }
+
+// ══════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════
+
+function renderJournal() {
+  const dp = document.getElementById('journal-date-picker');
+  if (!dp.value) dp.value = today();
+  loadJournalEntry(dp.value);
+  renderJournalList();
+}
+
+function loadJournalEntry(date) {
+  const entries = DB.get('journal') || {};
+  const e = entries[date] || {};
+  document.getElementById('j-activities').value = e.activities || '';
+  document.getElementById('j-wins').value = e.wins || '';
+  document.getElementById('j-mistakes').value = e.mistakes || '';
+  document.getElementById('j-lessons').value = e.lessons || '';
+  document.getElementById('j-notes').value = e.notes || '';
+  document.getElementById('j-tomorrow').value = e.tomorrow || '';
+  updateJournalScore(date);
+}
+
+function updateJournalScore(date) {
+  let score = computeScore(date);
+  // bonus for journal completeness
+  const fields = ['j-activities','j-wins','j-mistakes','j-lessons','j-notes','j-tomorrow'];
+  const filled = fields.filter(f => document.getElementById(f).value.trim().length > 0).length;
+  score = Math.min(100, score + Math.round(filled / fields.length * 15));
+  document.getElementById('j-score').innerHTML = `${score} <span style="font-size:14px;font-weight:400;color:var(--text3)">/ 100</span>`;
+}
+
+function saveJournal() {
+  const date = document.getElementById('journal-date-picker').value || today();
+  const entries = DB.get('journal') || {};
+  entries[date] = {
+    date,
+    activities: document.getElementById('j-activities').value,
+    wins: document.getElementById('j-wins').value,
+    mistakes: document.getElementById('j-mistakes').value,
+    lessons: document.getElementById('j-lessons').value,
+    notes: document.getElementById('j-notes').value,
+    tomorrow: document.getElementById('j-tomorrow').value,
+    score: computeScore(date),
+    ts: Date.now()
   };
-  const wins=trades.filter(t=>t.result==="WIN").length;
-  const losses=trades.filter(t=>t.result==="LOSS").length;
-  const wr=trades.length>0?Math.round((wins/trades.length)*100):0;
-  const r7=trades.slice(-7);
-  const wr7=r7.length>0?Math.round((r7.filter(t=>t.result==="WIN").length/r7.length)*100):0;
-  const pie=[{name:"WIN",value:wins},{name:"LOSS",value:losses}];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"stats"},
-      [React.createElement(CT,{key:"ct",icon:"📊",title:"Win Rate",color:C.gold}),
-      React.createElement("div",{key:"nums",style:{display:"flex",gap:20,alignItems:"center"}},[
-        React.createElement("div",{key:"all",style:{textAlign:"center"}},[
-          React.createElement("div",{key:"n",style:{fontSize:36,fontWeight:800,color:wr>=50?C.green:C.red,fontFamily:"JetBrains Mono"}},wr+"%"),
-          React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted,textTransform:"uppercase"}},"All Time")
-        ]),
-        React.createElement("div",{key:"w7",style:{textAlign:"center"}},[
-          React.createElement("div",{key:"n",style:{fontSize:36,fontWeight:800,color:wr7>=50?C.green:C.red,fontFamily:"JetBrains Mono"}},wr7+"%"),
-          React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted,textTransform:"uppercase"}},"Last 7")
-        ]),
-        trades.length>0&&React.createElement("div",{key:"pie",style:{flex:1,height:80}},
-          React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
-            React.createElement(PieChart,null,
-              React.createElement(Pie,{data:pie,cx:"50%",cy:"50%",innerRadius:25,outerRadius:38,dataKey:"value"},
-                pie.map((_,i)=>React.createElement(Cell,{key:i,fill:i===0?C.green:C.red}))
-              )
-            )
-          )
-        )
-      ]),
-      React.createElement("div",{key:"pills",style:{display:"flex",gap:12,marginTop:8}},[
-        React.createElement(Pill,{key:"w",color:C.green},"W: "+wins),
-        React.createElement(Pill,{key:"l",color:C.red},"L: "+losses),
-        React.createElement(Pill,{key:"t",color:C.muted},"Total: "+trades.length)
-      ])]
-    ),
-    React.createElement(Card,{key:"form",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"➕",title:"Log New Trade",color:C.accent}),
-      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}},
-        [["date","Date","date"],["pair","Pair","text"],["setup","Setup","text"],["entry","Entry","number"],["sl","Stop Loss","number"],["tp","Take Profit","number"],["risk","Risk %","number"]].map(([f,l,t])=>
-          React.createElement("div",{key:f},[
-            React.createElement("label",{key:"l"},l),
-            React.createElement("input",{key:"i",type:t,value:form[f],onChange:ev=>setForm(p=>({...p,[f]:ev.target.value}))})
-          ])
-        ).concat([
-          React.createElement("div",{key:"result"},[
-            React.createElement("label",{key:"l"},"Result"),
-            React.createElement("select",{key:"s",value:form.result,onChange:ev=>setForm(p=>({...p,result:ev.target.value})),style:{color:form.result==="WIN"?C.green:form.result==="LOSS"?C.red:C.text}},[
-              React.createElement("option",{key:"",value:""},"Select"),
-              React.createElement("option",{key:"w",value:"WIN"},"WIN"),
-              React.createElement("option",{key:"l",value:"LOSS"},"LOSS"),
-              React.createElement("option",{key:"b",value:"BE"},"BREAK EVEN")
-            ])
-          ]),
-          React.createElement("div",{key:"eb"},[React.createElement("label",{key:"l"},"Emotion Before"),React.createElement("input",{key:"i",value:form.emotion_before,onChange:ev=>setForm(p=>({...p,emotion_before:ev.target.value})),placeholder:"e.g. Calm"})]),
-          React.createElement("div",{key:"ea"},[React.createElement("label",{key:"l"},"Emotion After"),React.createElement("input",{key:"i",value:form.emotion_after,onChange:ev=>setForm(p=>({...p,emotion_after:ev.target.value})),placeholder:"e.g. Confident"})])
-        ])
-      ),
-      React.createElement("div",{key:"texts",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}},[
-        React.createElement("div",{key:"lesson"},[React.createElement("label",{key:"l"},"Lesson Learned"),React.createElement("textarea",{key:"t",value:form.lesson,onChange:ev=>setForm(p=>({...p,lesson:ev.target.value})),style:{minHeight:60}})]),
-        React.createElement("div",{key:"mistake"},[React.createElement("label",{key:"l"},"Mistakes Made"),React.createElement("textarea",{key:"t",value:form.mistake,onChange:ev=>setForm(p=>({...p,mistake:ev.target.value})),style:{minHeight:60}})])
-      ]),
-      React.createElement("div",{key:"ss",style:{marginTop:12}},[
-        React.createElement("label",{key:"l"},"Screenshot"),
-        React.createElement("input",{key:"i",type:"file",accept:"image/*",onChange:ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev2=>setImg(ev2.target.result);r.readAsDataURL(f);}}),
-        img&&React.createElement("img",{key:"img",src:img,style:{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,marginTop:8}})
-      ]),
-      React.createElement(Btn,{key:"btn",onClick:submit,style:{marginTop:16}},"Log Trade")]
-    ),
-    ...trades.slice().reverse().slice(0,10).map(t=>
-      React.createElement(Card,{key:t.id,style:{border:"1px solid "+(t.result==="WIN"?C.green:t.result==="LOSS"?C.red:C.border)+"33"}},
-        [React.createElement("div",{key:"hd",style:{display:"flex",justifyContent:"space-between",marginBottom:8}},[
-          React.createElement("span",{key:"p",style:{fontWeight:700,fontSize:14}},t.pair),
-          React.createElement(Pill,{key:"pill",color:t.result==="WIN"?C.green:t.result==="LOSS"?C.red:C.muted},t.result||"—")
-        ]),
-        React.createElement("div",{key:"info",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12}},
-          [["Setup",t.setup],["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Risk",t.risk+"%"],["Date",t.date]].filter(([,v])=>v).map(([l,v])=>
-            React.createElement("div",{key:l},[
-              React.createElement("span",{key:"l",style:{color:C.muted}},l+": "),
-              React.createElement("span",{key:"v",style:{fontFamily:"JetBrains Mono"}},v)
-            ])
-          )
-        ),
-        t.lesson&&React.createElement("div",{key:"lesson",style:{marginTop:8,fontSize:12,color:C.gold}},"💡 "+t.lesson),
-        t.screenshot&&React.createElement("img",{key:"img",src:t.screenshot,style:{width:"100%",maxHeight:140,objectFit:"cover",borderRadius:6,marginTop:8}})
-        ]
-      )
-    )
-  ]);
+  DB.set('journal', entries);
+  renderJournalList();
+  showToast('Journal saved!');
 }
 
-// ── LANGUAGE ──
-function LanguagePage({lang,setLang}){
-  const k=todayStr();const e=lang[k]||{};
-  const set=(f,v)=>setLang(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
-  const radar=[
-    {subject:"Reading",val:e.hskReading||0},{subject:"Listening",val:e.hskListening||0},
-    {subject:"Writing",val:e.hskWriting||0},{subject:"Speaking",val:e.hskSpeaking||0},{subject:"Vocab",val:e.hskVocab||0}
-  ];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"zh"},
-      [React.createElement(CT,{key:"ct",icon:"🇨🇳",title:"Chinese — HSK",color:C.red}),
-      ...[["chineseHours","Study Hours Today"],["chineseVocab","New Vocabulary"],["hskLevel","HSK Target Level"]].map(([f,l])=>
-        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-      ),
-      React.createElement("div",{key:"checks",style:{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}},
-        [["chinSpeaking","Speaking"],["chinListening","Listening"],["chinWriting","Writing"],["chinReading","Reading"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.red+"22":C.dim,padding:"6px 12px",borderRadius:20,border:"1px solid "+(e[f]?C.red:C.border)}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.red}}),
-            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.red:C.muted}},l)
-          ])
-        )
-      ),
-      React.createElement("div",{key:"notes",style:{marginTop:12}},[React.createElement("label",{key:"l"},"Notes"),React.createElement("textarea",{key:"t",value:e.chineseNotes||"",onChange:ev=>set("chineseNotes",ev.target.value)})])]
-    ),
-    React.createElement(Card,{key:"en"},
-      [React.createElement(CT,{key:"ct",icon:"🇬🇧",title:"English",color:C.accent}),
-      ...[["englishHours","Study Hours Today"],["englishVocab","New Words"]].map(([f,l])=>
-        React.createElement("div",{key:f,style:{marginBottom:10}},[React.createElement("label",{key:"l"},l),React.createElement("input",{key:"i",type:"number",min:0,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-      ),
-      React.createElement("div",{key:"checks",style:{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}},
-        [["engSpeaking","Speaking"],["engListening","Listening"],["engWriting","Writing"],["engReading","Reading"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:6,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.accent+"22":C.dim,padding:"6px 12px",borderRadius:20,border:"1px solid "+(e[f]?C.accent:C.border)}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.accent}}),
-            React.createElement("span",{key:"s",style:{fontSize:12,color:e[f]?C.accent:C.muted}},l)
-          ])
-        )
-      ),
-      React.createElement("div",{key:"notes",style:{marginTop:12}},[React.createElement("label",{key:"l"},"Notes"),React.createElement("textarea",{key:"t",value:e.englishNotes||"",onChange:ev=>set("englishNotes",ev.target.value)})])]
-    ),
-    React.createElement(Card,{key:"radar"},
-      [React.createElement(CT,{key:"ct",icon:"📊",title:"Skills Radar",color:C.purple}),
-      React.createElement("div",{key:"c",style:{height:200}},
-        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
-          React.createElement(RadarChart,{data:radar},[
-            React.createElement(PolarGrid,{key:"pg",stroke:C.border}),
-            React.createElement(PolarAngleAxis,{key:"pa",dataKey:"subject",tick:{fill:C.muted,fontSize:11}}),
-            React.createElement(Radar,{key:"r",dataKey:"val",stroke:C.red,fill:C.red,fillOpacity:0.25}),
-            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
-          ])
-        )
-      ),
-      React.createElement("div",{key:"inputs",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}},
-        [["hskReading","Reading"],["hskListening","Listening"],["hskWriting","Writing"],["hskSpeaking","Speaking"],["hskVocab","Vocabulary"]].map(([f,l])=>
-          React.createElement("div",{key:f},[React.createElement("label",{key:"l"},l+" (0-100)"),React.createElement("input",{key:"i",type:"number",min:0,max:100,value:e[f]||"",onChange:ev=>set(f,+ev.target.value)})])
-        )
-      )]
-    )
-  ]);
+function renderJournalList() {
+  const entries = DB.get('journal') || {};
+  const sorted = Object.values(entries).sort((a,b) => b.date.localeCompare(a.date));
+  const container = document.getElementById('journal-list');
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">📓</div>No journal entries yet.</div>';
+    return;
+  }
+  container.innerHTML = sorted.slice(0, 20).map(e => `
+    <div class="goal-item" style="cursor:pointer" onclick="loadDateEntry('${e.date}')">
+      <div>
+        <div class="goal-name">${formatDate(e.date)}</div>
+        <div class="goal-streak" style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.wins || e.notes || 'No details'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag ${e.score >= 70 ? 'tag-green' : e.score >= 40 ? 'tag-yellow' : 'tag-red'}">${e.score}%</span>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteJournal('${e.date}')">✕</button>
+      </div>
+    </div>
+  `).join('');
 }
 
-// ── BIBLE ──
-function BiblePage({bible,setBible}){
-  const k=todayStr();const e=bible[k]||{};
-  const set=(f,v)=>setBible(p=>({...p,[k]:{...(p[k]||{}),[f]:v}}));
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"top",style:{gridColumn:"1/-1",background:"linear-gradient(135deg,"+C.card+",#0f1520)",border:"1px solid "+C.purple+"33"}},
-      [React.createElement(CT,{key:"ct",icon:"✝️",title:"Bible & Prayer Journal",color:C.purple}),
-      React.createElement("div",{key:"quote",style:{padding:"12px 16px",background:C.purple+"11",borderLeft:"3px solid "+C.purple,borderRadius:4,marginBottom:16,fontSize:12,color:C.purple,fontStyle:"italic"}},
-        '"Trust in the Lord with all your heart and lean not on your own understanding." — Proverbs 3:5'
-      ),
-      React.createElement("div",{key:"checks",style:{display:"flex",gap:16,flexWrap:"wrap"}},
-        [["prayer","Morning Prayer ✓"],["bibleRead","Bible Reading ✓"],["nightPrayer","Night Prayer ✓"]].map(([f,l])=>
-          React.createElement("label",{key:f,style:{display:"flex",alignItems:"center",gap:8,cursor:"pointer",textTransform:"none",letterSpacing:0,background:e[f]?C.purple+"22":C.dim,padding:"8px 16px",borderRadius:20,border:"1px solid "+(e[f]?C.purple:C.border)}},[
-            React.createElement("input",{key:"cb",type:"checkbox",checked:!!e[f],onChange:ev=>set(f,ev.target.checked),style:{accentColor:C.purple}}),
-            React.createElement("span",{key:"s",style:{fontSize:13,color:e[f]?C.purple:C.muted}},l)
-          ])
-        )
-      )]
-    ),
-    ...[
-      ["biblePassage","📖 Bible Passage Read","e.g. John 3:16-21"],
-      ["godTaughtMe","💬 What God Taught Me Today","Write what you felt..."],
-      ["favoriteVerse","⭐ Favorite Verse Today","Write the verse..."],
-      ["prayerNotes","🙏 Prayer Notes","Who or what did you pray for?"],
-      ["gratitude","🌟 Gratitude","What are you grateful for?"],
-    ].map(([f,l,p])=>
-      React.createElement(Card,{key:f,style:{border:"1px solid "+C.purple+"22"}},
-        [React.createElement("div",{key:"lbl",style:{fontSize:13,color:C.purple,marginBottom:8,fontWeight:700}},l),
-        React.createElement("textarea",{key:"ta",placeholder:p,value:e[f]||"",onChange:ev=>set(f,ev.target.value)})]
-      )
-    )
-  ]);
+function loadDateEntry(date) {
+  document.getElementById('journal-date-picker').value = date;
+  loadJournalEntry(date);
 }
 
-// ── GOALS ──
-function GoalsPage({goals,setGoals}){
-  const set=(f,v)=>setGoals(p=>({...p,[f]:v}));
-  const GLIST=[
-    {key:"sixpack",label:"Six Pack",icon:"💪",color:C.red},
-    {key:"funded",label:"$100K Funded Account",icon:"💰",color:C.gold},
-    {key:"withdrawal",label:"$10K Withdrawal",icon:"💵",color:C.green},
-    {key:"hsk",label:"HSK 5 + Prepare HSK 6",icon:"🇨🇳",color:C.red},
-    {key:"english",label:"Improve English",icon:"🇬🇧",color:C.accent},
-    {key:"ai",label:"Learn AI & Business",icon:"🤖",color:C.purple},
-    {key:"income",label:"Multiple Income Streams",icon:"📈",color:C.gold},
-    {key:"bible",label:"Closer to God",icon:"✝️",color:"#e8d5ff"},
-  ];
-  const FEARS=[
-    "Fear of wasting my potential","Fear of being lazy","Fear of financial failure",
-    "Fear of emotional trading","Fear of failing HSK","Fear of not reaching my goals",
-    "Fear of losing discipline","Fear of becoming successful but empty",
-    "Fear of drifting away from God","Fear of regret",
-  ];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"goals",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"🎯",title:"2026 Goals Dashboard",color:C.gold}),
-      React.createElement("div",{key:"grid",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8}},
-        GLIST.map(g=>
-          React.createElement("div",{key:g.key,style:{background:C.bg,borderRadius:8,padding:"12px 14px",border:"1px solid "+C.border}},
-            [React.createElement("div",{key:"hd",style:{display:"flex",justifyContent:"space-between",marginBottom:6}},[
-              React.createElement("span",{key:"l",style:{fontSize:12,fontWeight:700}},g.icon+" "+g.label),
-              React.createElement("span",{key:"v",style:{color:g.color,fontFamily:"JetBrains Mono",fontSize:12}},(goals[g.key]||0)+"%")
-            ]),
-            React.createElement(PBar,{key:"pb",value:goals[g.key]||0,max:100,color:g.color,showPct:false}),
-            React.createElement("input",{key:"r",type:"range",min:0,max:100,value:goals[g.key]||0,onChange:ev=>set(g.key,+ev.target.value),style:{width:"100%",marginTop:4,accentColor:g.color}})]
-          )
-        )
-      )]
-    ),
-    React.createElement(Card,{key:"fears",style:{border:"1px solid "+C.red+"33"}},
-      [React.createElement(CT,{key:"ct",icon:"⚡",title:"My Fears — Face Them",color:C.red}),
-      FEARS.map(f=>
-        React.createElement("div",{key:f,style:{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8,padding:"8px 12px",background:C.red+"0a",borderRadius:6,border:"1px solid "+C.red+"22"}},[
-          React.createElement("span",{key:"a",style:{color:C.red}},"▸"),
-          React.createElement("span",{key:"t",style:{fontSize:12}},f)
-        ])
-      )]
-    ),
-    React.createElement(Card,{key:"vision"},
-      [React.createElement(CT,{key:"ct",icon:"🔥",title:"My Vision",color:C.gold}),
-      ["Close to God","Disciplined","Mentally Strong","Financially Wise","Healthy","Business Minded","Multilingual","Peaceful"].map((v,i)=>
-        React.createElement("div",{key:v,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<7?"1px solid "+C.border:"none"}},[
-          React.createElement("div",{key:"n",style:{width:24,height:24,background:C.gold+"22",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.gold,fontSize:11,fontWeight:700}},i+1),
-          React.createElement("span",{key:"t",style:{fontSize:13}},v)
-        ])
-      ),
-      React.createElement("div",{key:"q",style:{marginTop:16,padding:"12px 16px",background:C.gold+"11",borderRadius:8,fontSize:12,color:C.gold,fontStyle:"italic",textAlign:"center"}},
-        '"Am I becoming the person I said I wanted to become?"'
-      )]
-    )
-  ]);
+function deleteJournal(date) {
+  const entries = DB.get('journal') || {};
+  delete entries[date];
+  DB.set('journal', entries);
+  renderJournalList();
+  showToast('Entry deleted');
 }
 
-// ── ANALYTICS ──
-function AnalyticsPage({journal,routine,fitness,trades,food}){
-  const days30=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(29-i));return d.toISOString().split("T")[0];});
-  const days7=days30.slice(-7);
-  const wScores=days7.map(k=>({name:k.slice(5),score:calcScore(routine[k]||{},journal[k]||{})}));
-  const habits=[
-    {name:"Prayer",val:days30.filter(k=>routine[k]?.prayer).length},
-    {name:"Bible",val:days30.filter(k=>routine[k]?.bibleReading).length},
-    {name:"Workout",val:days30.filter(k=>routine[k]?.weights||routine[k]?.cardio).length},
-    {name:"Trading",val:days30.filter(k=>routine[k]?.tradingStudy).length},
-    {name:"Chinese",val:days30.filter(k=>routine[k]?.chineseStudy).length},
-    {name:"English",val:days30.filter(k=>routine[k]?.englishStudy).length},
-    {name:"Protein",val:days30.filter(k=>journal[k]?.proteinGoal).length},
+// ══════════════════════════════════════
+// GOALS PAGE
+// ══════════════════════════════════════
+
+function renderGoals() {
+  const t = today();
+  const done = getGoalsForDate(t);
+  document.getElementById('goals-today-label').textContent = formatDate(t);
+
+  const list = document.getElementById('goals-list');
+  list.innerHTML = GOALS.map(g => {
+    const streak = getGoalStreak(g.id);
+    return `
+      <div class="goal-item">
+        <div class="goal-left">
+          <div class="goal-icon ${g.color}">${g.icon}</div>
+          <div>
+            <div class="goal-name">${g.name}</div>
+            <div class="goal-streak">${streak} day streak · +${g.pts} pts</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${streak > 0 ? `<span class="tag tag-orange">🔥 ${streak}</span>` : ''}
+          <div class="check-toggle ${done[g.id] ? 'checked' : ''}"
+               onclick="toggleGoalPage('${g.id}', this)">
+            ${done[g.id] ? '✓' : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Streak grid
+  const grid = document.getElementById('streak-grid');
+  grid.innerHTML = GOALS.map(g => {
+    const streak = getGoalStreak(g.id);
+    const last7 = [];
+    for (let i=6; i>=0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i);
+      const dd = getGoalsForDate(d.toISOString().slice(0,10));
+      last7.push(dd[g.id] ? 1 : 0);
+    }
+    return `
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div class="goal-icon ${g.color}" style="width:28px;height:28px;font-size:13px">${g.icon}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500">${g.name}</div>
+            <div class="goal-streak">${streak} day streak</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px">
+          ${last7.map((v,i) => `
+            <div title="${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][(new Date().getDay()+i-6+7)%7]}"
+                 style="flex:1;height:24px;border-radius:4px;background:${v ? 'var(--accent)' : 'var(--bg3)'}"></div>
+          `).join('')}
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;display:flex;justify-content:space-between">
+          <span>7 days ago</span><span>Today</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleGoalPage(id, el) {
+  const t = today();
+  const done = getGoalsForDate(t);
+  done[id] = !done[id];
+  setGoalsForDate(t, done);
+  el.classList.toggle('checked');
+  el.textContent = done[id] ? '✓' : '';
+  renderGoals();
+}
+
+// ══════════════════════════════════════
+// NUTRITION
+// ══════════════════════════════════════
+
+function getNutritionToday() {
+  const logs = DB.get('nutrition_log') || [];
+  const t = today();
+  const todayLogs = logs.filter(l => l.date === t);
+  return todayLogs.reduce((acc, l) => ({
+    cal: acc.cal + (l.cal||0),
+    protein: acc.protein + (l.protein||0),
+    carbs: acc.carbs + (l.carbs||0),
+    fat: acc.fat + (l.fat||0),
+    fiber: acc.fiber + (l.fiber||0),
+    water: acc.water + (l.water||0),
+  }), {cal:0,protein:0,carbs:0,fat:0,fiber:0,water:0});
+}
+
+function renderNutrition() {
+  const totals = getNutritionToday();
+  const goals = DB.get('nut_goals') || {cal:2000,protein:150,carbs:250,fat:65,fiber:30,water:3000};
+
+  const bars = [
+    ['cal','nut-cal',goals.cal,'orange'],
+    ['protein','nut-pro',goals.protein,'blue'],
+    ['carbs','nut-carb',goals.carbs,'yellow'],
+    ['fat','nut-fat',goals.fat,'red'],
+    ['fiber','nut-fib',goals.fiber,'green'],
+    ['water','nut-wat',goals.water,'cyan'],
   ];
-  const best=[...habits].sort((a,b)=>b.val-a.val)[0];
-  const worst=[...habits].sort((a,b)=>a.val-b.val)[0];
-  const food7=days7.map(k=>food[k]||{});
-  const greenDays=food7.filter(f=>f.proteinGoal&&f.caloriesGoal&&(f.healthyMeals||0)>=3).length;
-  const redDays=food7.filter(f=>!f.proteinGoal&&!f.caloriesGoal).length;
-  const yellowDays=7-greenDays-redDays;
-  const nutScore=Math.round((greenDays/7)*100);
-  // Heatmap
-  const heatDays=Array.from({length:91},(_,i)=>{
-    const d=new Date();d.setDate(d.getDate()-(90-i));
-    const k=d.toISOString().split("T")[0];
-    const r=routine[k]||{};const j=journal[k]||{};
-    let score=0;
-    if(r.prayer)score++;if(r.bibleReading)score++;if(r.weights||r.cardio)score++;
-    if(r.tradingStudy)score++;if(r.chineseStudy)score++;if(j.proteinGoal)score++;
-    return{date:k,score,day:d.getDay(),week:Math.floor(i/7)};
+
+  bars.forEach(([key,id,goal,color]) => {
+    const val = totals[key]||0;
+    const pct = Math.min(100, Math.round(val/goal*100));
+    const el = document.getElementById(id+'-val');
+    const bar = document.getElementById(id+'-bar');
+    if (el) el.textContent = val;
+    if (bar) bar.style.width = pct + '%';
   });
-  const heatColors=["#1a2030","#003d1f","#006636","#00a354",C.green];
-  return React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}},[
-    React.createElement(Card,{key:"wscore",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"📊",title:"Daily Score — Last 7 Days",color:C.accent}),
-      React.createElement("div",{key:"c",style:{height:160}},
-        React.createElement(ResponsiveContainer,{width:"100%",height:"100%"},
-          React.createElement(BarChart,{data:wScores},[
-            React.createElement(Bar,{key:"b",dataKey:"score",fill:C.accent,radius:[4,4,0,0]}),
-            React.createElement(XAxis,{key:"x",dataKey:"name",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false}),
-            React.createElement(YAxis,{key:"y",tick:{fill:C.muted,fontSize:11},axisLine:false,tickLine:false,domain:[0,100]}),
-            React.createElement(Tooltip,{key:"t",contentStyle:{background:C.card,border:"1px solid "+C.border,borderRadius:8}})
-          ])
-        )
-      )]
-    ),
-    React.createElement(Card,{key:"habits"},
-      [React.createElement(CT,{key:"ct",icon:"✅",title:"Habit Completion — 30 Days",color:C.green}),
-      habits.map(h=>
-        React.createElement(PBar,{key:h.name,label:h.name+" ("+h.val+"/30)",value:h.val,max:30,color:h.val>=20?C.green:h.val>=10?C.yellow:C.red})
-      )]
-    ),
-    React.createElement(Card,{key:"growth"},
-      [React.createElement(CT,{key:"ct",icon:"🔍",title:"Personal Growth",color:C.gold}),
-      [
-        {label:"Best Habit This Month",val:best?.name,color:C.green,icon:"🏆"},
-        {label:"Needs Improvement",val:worst?.name,color:C.red,icon:"⚠️"},
-      ].map(item=>
-        React.createElement("div",{key:item.label,style:{padding:"12px 16px",background:item.color+"11",borderLeft:"3px solid "+item.color,borderRadius:4,marginBottom:12}},[
-          React.createElement("div",{key:"l",style:{fontSize:11,color:C.muted,marginBottom:4}},item.label),
-          React.createElement("div",{key:"v",style:{fontSize:18,fontWeight:800,color:item.color}},item.icon+" "+(item.val||"—"))
-        ])
-      )]
-    ),
-    React.createElement(Card,{key:"food"},
-      [React.createElement(CT,{key:"ct",icon:"🥗",title:"Weekly Nutrition Report",color:C.green}),
-      React.createElement("div",{key:"boxes",style:{display:"flex",gap:12,marginBottom:16}},
-        [["🟢 Green",greenDays,C.green],["🟡 Yellow",yellowDays,C.yellow],["🔴 Red",redDays,C.red]].map(([l,v,c])=>
-          React.createElement("div",{key:l,style:{flex:1,textAlign:"center",padding:"10px 8px",background:c+"11",borderRadius:8,border:"1px solid "+c+"33"}},[
-            React.createElement("div",{key:"n",style:{fontSize:20,fontWeight:800,color:c,fontFamily:"JetBrains Mono"}},v),
-            React.createElement("div",{key:"l",style:{fontSize:10,color:C.muted}},l+" Days")
-          ])
-        )
-      ),
-      React.createElement(PBar,{key:"pb",label:"Weekly Score: "+nutScore+"%",value:nutScore,max:100,color:nutScore>=70?C.green:nutScore>=40?C.yellow:C.red})]
-    ),
-    React.createElement(Card,{key:"heatmap",style:{gridColumn:"1/-1"}},
-      [React.createElement(CT,{key:"ct",icon:"🔥",title:"Life Heatmap — Last 13 Weeks",color:C.accent}),
-      React.createElement("div",{key:"wrap",style:{overflowX:"auto"}},
-        [React.createElement("div",{key:"grid",style:{display:"flex",gap:3}},
-          Array.from({length:13},(_,w)=>
-            React.createElement("div",{key:w,style:{display:"flex",flexDirection:"column",gap:3}},
-              Array.from({length:7},(_,d)=>{
-                const cell=heatDays.find(h=>h.week===w&&h.day===d);
-                const s=cell?.score||0;
-                return React.createElement("div",{key:d,title:cell?.date||"",style:{width:14,height:14,borderRadius:3,background:heatColors[Math.min(s,4)],border:"1px solid "+C.border+"22"}});
-              })
-            )
-          )
-        ),
-        React.createElement("div",{key:"legend",style:{display:"flex",gap:4,marginTop:8,alignItems:"center"}},
-          [React.createElement("span",{key:"less",style:{fontSize:10,color:C.muted}},"Less"),
-          ...heatColors.map((c,i)=>React.createElement("div",{key:i,style:{width:12,height:12,borderRadius:2,background:c}})),
-          React.createElement("span",{key:"more",style:{fontSize:10,color:C.muted}},"More")]
-        )]
-      )]
-    )
-  ]);
+
+  const vit = DB.get('vitamins_today') || '';
+  if (document.getElementById('nut-vitamins')) {
+    document.getElementById('nut-vitamins').value = vit;
+  }
+
+  renderNutLog();
+  renderFoodPhotos();
 }
 
-// ── MAIN APP ──
-const PAGES=[
-  {id:"home",label:"Dashboard",icon:"⬡"},
-  {id:"routine",label:"Routine",icon:"⏰"},
-  {id:"journal",label:"Journal",icon:"📔"},
-  {id:"food",label:"Food",icon:"🍽️"},
-  {id:"fitness",label:"Fitness",icon:"💪"},
-  {id:"trading",label:"Trading",icon:"📈"},
-  {id:"language",label:"Language",icon:"🗣️"},
-  {id:"bible",label:"Bible",icon:"✝️"},
-  {id:"goals",label:"Goals",icon:"🎯"},
-  {id:"analytics",label:"Analytics",icon:"📊"},
-];
+function saveFood() {
+  const name = document.getElementById('nut-food-name').value;
+  if (!name) { showToast('Enter food name'); return; }
 
-function App(){
-  const [page,setPage]=useState("home");
-  const [journal,setJournal]=useLS("lifeos_journal",{});
-  const [routine,setRoutine]=useLS("lifeos_routine",{});
-  const [fitness,setFitness]=useLS("lifeos_fitness",{});
-  const [trades,setTrades]=useLS("lifeos_trades",[]);
-  const [lang,setLang]=useLS("lifeos_lang",{});
-  const [bible,setBible]=useLS("lifeos_bible",{});
-  const [goals,setGoals]=useLS("lifeos_goals",{});
-  const [food,setFood]=useLS("lifeos_food",{});
-  const [menuOpen,setMenuOpen]=useState(false);
-  const score=calcScore(routine[todayStr()]||{},journal[todayStr()]||{});
-  const sc=score>=90?C.green:score>=75?C.accent:score>=60?C.yellow:C.red;
-  return React.createElement("div",{style:{minHeight:"100vh",display:"flex",flexDirection:"column"}},[
-    // Header
-    React.createElement("div",{key:"hdr",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:"0 20px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}},[
-      React.createElement("div",{key:"logo",style:{display:"flex",alignItems:"center",gap:12}},[
-        React.createElement("div",{key:"icon",style:{width:32,height:32,background:"linear-gradient(135deg,"+C.accent+","+C.purple+")",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},"⬡"),
-        React.createElement("div",{key:"text"},[
-          React.createElement("div",{key:"t",style:{fontSize:13,fontWeight:800,letterSpacing:".06em"}},"LIFE OS"),
-          React.createElement("div",{key:"s",style:{fontSize:10,color:C.muted}},"Personal Operating System")
-        ])
-      ]),
-      React.createElement("div",{key:"right",style:{display:"flex",alignItems:"center",gap:12}},[
-        React.createElement("div",{key:"date",style:{fontFamily:"JetBrains Mono",fontSize:11,color:sc}},todayStr()),
-        React.createElement("div",{key:"score",style:{background:sc+"22",color:sc,border:"1px solid "+sc+"44",borderRadius:20,padding:"3px 12px",fontFamily:"JetBrains Mono",fontSize:12,fontWeight:700}},score),
-        React.createElement("button",{key:"menu",onClick:()=>setMenuOpen(p=>!p),style:{background:"none",border:"1px solid "+C.border,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:14}},"☰")
-      ])
-    ]),
-    // Nav bar
-    !menuOpen&&React.createElement("div",{key:"nav",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:"0 20px",overflowX:"auto",whiteSpace:"nowrap"}},
-      React.createElement("div",{style:{display:"inline-flex"}},
-        PAGES.map(p=>
-          React.createElement("button",{key:p.id,onClick:()=>setPage(p.id),style:{background:"none",border:"none",color:page===p.id?C.accent:C.muted,padding:"14px 14px",fontSize:12,fontWeight:700,borderBottom:"2px solid "+(page===p.id?C.accent:"transparent"),borderRadius:0,whiteSpace:"nowrap"}},
-            p.icon+" "+p.label
-          )
-        )
-      )
-    ),
-    // Mobile menu
-    menuOpen&&React.createElement("div",{key:"mmenu",style:{background:C.surface,borderBottom:"1px solid "+C.border,padding:16}},
-      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8}},
-        PAGES.map(p=>
-          React.createElement("button",{key:p.id,onClick:()=>{setPage(p.id);setMenuOpen(false);},style:{background:page===p.id?C.accent+"22":C.bg,border:"1px solid "+(page===p.id?C.accent:C.border),color:page===p.id?C.accent:C.text,padding:"10px 6px",borderRadius:8,fontSize:11,fontWeight:700}},
-            p.icon+" "+p.label
-          )
-        )
-      )
-    ),
-    // Content
-    React.createElement("div",{key:"content",style:{flex:1,padding:20,maxWidth:1400,width:"100%",margin:"0 auto"}},
-      page==="home"?React.createElement(DashboardHome,{journal,routine,goals}):
-      page==="routine"?React.createElement(RoutinePage,{routine,setRoutine}):
-      page==="journal"?React.createElement(JournalPage,{journal,setJournal}):
-      page==="food"?React.createElement(FoodPage,{food,setFood}):
-      page==="fitness"?React.createElement(FitnessPage,{fitness,setFitness}):
-      page==="trading"?React.createElement(TradingPage,{trades,setTrades}):
-      page==="language"?React.createElement(LanguagePage,{lang,setLang}):
-      page==="bible"?React.createElement(BiblePage,{bible,setBible}):
-      page==="goals"?React.createElement(GoalsPage,{goals,setGoals}):
-      React.createElement(AnalyticsPage,{journal,routine,fitness,trades,food})
-    ),
-    // Footer
-    React.createElement("div",{key:"footer",style:{padding:"12px 20px",borderTop:"1px solid "+C.border,display:"flex",justifyContent:"center"}},
-      React.createElement("span",{style:{fontSize:11,color:C.muted}},"All data saved locally in your browser · LIFE OS")
-    )
-  ]);
+  const entry = {
+    date: today(),
+    name,
+    cal: parseFloat(document.getElementById('nut-food-cal').value)||0,
+    protein: parseFloat(document.getElementById('nut-food-pro').value)||0,
+    carbs: parseFloat(document.getElementById('nut-food-carb').value)||0,
+    fat: parseFloat(document.getElementById('nut-food-fat').value)||0,
+    fiber: parseFloat(document.getElementById('nut-food-fib').value)||0,
+    water: parseFloat(document.getElementById('nut-food-wat').value)||0,
+    notes: document.getElementById('nut-food-notes').value,
+    ts: Date.now()
+  };
+
+  const photoEl = document.getElementById('nut-food-photo');
+  if (photoEl.files && photoEl.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      entry.photo = e.target.result;
+      DB.push('nutrition_log', entry);
+      finishSaveFood();
+    };
+    reader.readAsDataURL(photoEl.files[0]);
+  } else {
+    DB.push('nutrition_log', entry);
+    finishSaveFood();
+  }
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+function finishSaveFood() {
+  closeModal('nutrition-modal');
+  ['nut-food-name','nut-food-cal','nut-food-pro','nut-food-carb','nut-food-fat','nut-food-fib','nut-food-wat','nut-food-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('nut-photo-preview').style.display = 'none';
+  renderNutrition();
+  showToast('Food logged!');
+}
+
+function renderNutLog() {
+  const logs = DB.get('nutrition_log') || [];
+  const tbody = document.getElementById('nut-log-body');
+  if (!tbody) return;
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No food logged yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...logs].reverse().slice(0,50).map((l, i) => {
+    const ri = logs.length - 1 - i;
+    return `
+      <tr>
+        <td style="font-family:var(--mono);font-size:11px">${l.date}</td>
+        <td><strong>${l.name}</strong></td>
+        <td>${l.cal}</td>
+        <td>${l.protein}g</td>
+        <td>${l.carbs}g</td>
+        <td>${l.fat}g</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${l.notes||'—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="delFood(${ri})">✕</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function delFood(idx) {
+  DB.del('nutrition_log', idx);
+  renderNutrition();
+  showToast('Entry removed');
+}
+
+function renderFoodPhotos() {
+  const logs = DB.get('nutrition_log') || [];
+  const grid = document.getElementById('food-photo-grid');
+  const photos = logs.filter(l => l.photo);
+  if (!grid) return;
+  if (!photos.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No food photos yet.</div>';
+    return;
+  }
+  grid.innerHTML = photos.map(l => `
+    <img class="img-thumb" src="${l.photo}" alt="${l.name}" title="${l.name} · ${l.date}">
+  `).join('');
+}
+
+function previewNutPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('nut-photo-preview');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveVitamins() {
+  DB.set('vitamins_today', document.getElementById('nut-vitamins').value);
+  showToast('Vitamins saved!');
+}
+
+function nutTab(el, id) {
+  document.querySelectorAll('#page-nutrition .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['nut-today','nut-log','nut-photos'].forEach(p => {
+    document.getElementById(p).style.display = p === id ? '' : 'none';
+  });
+  if (id === 'nut-log') renderNutLog();
+  if (id === 'nut-photos') renderFoodPhotos();
+}
+
+// ══════════════════════════════════════
+// FITNESS
+// ══════════════════════════════════════
+
+function renderFitness() {
+  const log = DB.get('fitness_log') || [];
+  const last = log[log.length-1] || {};
+  document.getElementById('fit-weight').textContent = last.weight ? last.weight + ' kg' : '—';
+  document.getElementById('fit-bf').textContent = last.bf ? last.bf + '%' : '—';
+  document.getElementById('fit-muscle').textContent = last.muscle ? last.muscle + ' kg' : '—';
+  document.getElementById('fit-waist').textContent = last.waist ? last.waist + ' cm' : '—';
+
+  const tbody = document.getElementById('fitness-log-body');
+  if (!log.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No fitness entries yet.</td></tr>';
+  } else {
+    tbody.innerHTML = [...log].reverse().map((l, i) => {
+      const ri = log.length - 1 - i;
+      return `
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px">${l.date}</td>
+          <td>${l.weight||'—'}</td>
+          <td>${l.bf||'—'}</td>
+          <td>${l.muscle||'—'}</td>
+          <td>${l.waist||'—'}</td>
+          <td>${l.notes||'—'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  renderFitnessPhotos();
+}
+
+function saveFitness() {
+  DB.push('fitness_log', {
+    date: today(),
+    weight: parseFloat(document.getElementById('fit-f-weight').value)||null,
+    bf: parseFloat(document.getElementById('fit-f-bf').value)||null,
+    muscle: parseFloat(document.getElementById('fit-f-muscle').value)||null,
+    waist: parseFloat(document.getElementById('fit-f-waist').value)||null,
+    notes: document.getElementById('fit-f-notes').value,
+    ts: Date.now()
+  });
+  closeModal('fitness-modal');
+  renderFitness();
+  showToast('Fitness logged!');
+}
+
+function uploadFitnessPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const photos = DB.get('fitness_photos') || [];
+    photos.push({ src: ev.target.result, date: today() });
+    DB.set('fitness_photos', photos);
+    renderFitnessPhotos();
+    showToast('Photo uploaded!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderFitnessPhotos() {
+  const photos = DB.get('fitness_photos') || [];
+  const grid = document.getElementById('fitness-photo-grid');
+  if (!photos.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No progress photos yet.</div>';
+    return;
+  }
+  grid.innerHTML = photos.map(p => `
+    <img class="img-thumb" src="${p.src}" alt="Progress ${p.date}" title="${p.date}">
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// TRADING
+// ══════════════════════════════════════
+
+function renderTrading() {
+  const trades = DB.get('trades') || [];
+  const wins = trades.filter(t => t.result === 'Win').length;
+  const totalPnl = trades.reduce((s,t) => s+(parseFloat(t.pnl)||0), 0);
+  const winrate = trades.length ? Math.round(wins/trades.length*100) : 0;
+
+  document.getElementById('tr-total').textContent = trades.length;
+  document.getElementById('tr-winrate').textContent = winrate + '%';
+  document.getElementById('tr-winrate').style.color = winrate >= 50 ? 'var(--green)' : 'var(--red)';
+  const pnlStr = (totalPnl >= 0 ? '+$' : '-$') + Math.abs(totalPnl).toFixed(0);
+  document.getElementById('tr-pnl').textContent = pnlStr;
+  document.getElementById('tr-pnl').style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+  // avg R:R
+  const rrVals = trades.map(t => {
+    const m = (t.rr||'').match(/(\d+):(\d+)/);
+    return m ? parseInt(m[2])/parseInt(m[1]) : 0;
+  }).filter(x => x > 0);
+  const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(1) : 0;
+  document.getElementById('tr-rr').textContent = avgRR ? '1:' + avgRR : '—';
+
+  const tbody = document.getElementById('trade-log-body');
+  if (!trades.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">No trades logged yet.</td></tr>';
+  } else {
+    tbody.innerHTML = [...trades].reverse().map((t, i) => {
+      const ri = trades.length - 1 - i;
+      const pnlN = parseFloat(t.pnl)||0;
+      return `
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px">${t.date}</td>
+          <td><strong>${t.symbol}</strong></td>
+          <td><span class="tag ${t.type==='Long'?'tag-green':'tag-red'}">${t.type}</span></td>
+          <td>${t.entry||'—'}</td>
+          <td>${t.exit||'—'}</td>
+          <td>$${t.size||0}</td>
+          <td style="color:${pnlN>=0?'var(--green)':'var(--red)'}">
+            ${pnlN>=0?'+':''}$${pnlN.toFixed(0)}
+          </td>
+          <td>${t.rr||'—'}</td>
+          <td><span class="tag ${t.result==='Win'?'tag-green':'tag-red'}">${t.result}</span></td>
+          <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">${t.notes||'—'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="delTrade(${ri})">✕</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  renderTradePhotos();
+}
+
+function saveTrade() {
+  const entry = parseFloat(document.getElementById('tr-entry').value)||0;
+  const exit = parseFloat(document.getElementById('tr-exit').value)||0;
+  const size = parseFloat(document.getElementById('tr-size').value)||0;
+  const type = document.getElementById('tr-type').value;
+  let pnl = 0;
+  if (type === 'Long') pnl = ((exit - entry) / entry * size);
+  else pnl = ((entry - exit) / entry * size);
+
+  const trade = {
+    date: today(),
+    symbol: document.getElementById('tr-symbol').value,
+    type,
+    entry, exit, size,
+    pnl: pnl.toFixed(2),
+    rr: document.getElementById('tr-rr').value,
+    result: pnl >= 0 ? 'Win' : 'Loss',
+    notes: document.getElementById('tr-notes').value,
+    ts: Date.now()
+  };
+
+  const photoEl = document.getElementById('tr-screenshot');
+  if (photoEl.files && photoEl.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      trade.photo = e.target.result;
+      DB.push('trades', trade);
+      finishSaveTrade();
+    };
+    reader.readAsDataURL(photoEl.files[0]);
+  } else {
+    DB.push('trades', trade);
+    finishSaveTrade();
+  }
+}
+
+function finishSaveTrade() {
+  closeModal('trade-modal');
+  renderTrading();
+  showToast('Trade logged!');
+}
+
+function delTrade(idx) {
+  DB.del('trades', idx);
+  renderTrading();
+}
+
+function previewTradePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('tr-photo-preview');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderTradePhotos() {
+  const trades = DB.get('trades') || [];
+  const grid = document.getElementById('trade-photo-grid');
+  const photos = trades.filter(t => t.photo);
+  if (!photos.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No screenshots yet.</div>';
+    return;
+  }
+  grid.innerHTML = photos.map(t => `
+    <img class="img-thumb" src="${t.photo}" alt="${t.symbol}" title="${t.symbol} · ${t.date}">
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// CHINESE
+// ══════════════════════════════════════
+
+function renderChinese() {
+  const log = DB.get('chinese_log') || [];
+  const totalVocab = log.reduce((s,l) => s+(parseInt(l.vocab)||0), 0);
+  const totalHours = log.reduce((s,l) => s+(parseFloat(l.duration)||0)/60, 0);
+
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const wStr = weekAgo.toISOString().slice(0,10);
+  const weekH = log.filter(l => l.date >= wStr).reduce((s,l) => s+(parseFloat(l.duration)||0)/60, 0);
+
+  document.getElementById('ch-vocab').textContent = totalVocab;
+  document.getElementById('ch-hours').textContent = totalHours.toFixed(1);
+  document.getElementById('ch-week').textContent = weekH.toFixed(1) + 'h';
+
+  // HSK levels
+  const hskData = DB.get('hsk_progress') || {hsk5:0, hsk6:0};
+  const hskLevels = [
+    {lvl:'HSK 1', pct:100},{lvl:'HSK 2', pct:100},{lvl:'HSK 3', pct:100},
+    {lvl:'HSK 4', pct:100},{lvl:'HSK 5', pct:hskData.hsk5||0},{lvl:'HSK 6', pct:hskData.hsk6||0},
+  ];
+
+  document.getElementById('hsk-levels').innerHTML = hskLevels.map(h => `
+    <div class="hsk-block">
+      <div class="hsk-level">${h.lvl}</div>
+      <div class="hsk-bar"><div class="hsk-fill" style="width:${h.pct}%"></div></div>
+      <div class="hsk-pct">${h.pct}%</div>
+    </div>
+  `).join('');
+
+  const tbody = document.getElementById('chinese-log-body');
+  if (!log.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No sessions logged yet.</td></tr>';
+  } else {
+    tbody.innerHTML = [...log].reverse().map((l, i) => {
+      const ri = log.length - 1 - i;
+      return `
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px">${l.date}</td>
+          <td>${l.duration} min</td>
+          <td>${l.vocab||0} words</td>
+          <td><span class="tag tag-purple">${l.hsk}</span></td>
+          <td>${l.activity||'—'}</td>
+          <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">${l.notes||'—'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="delChinese(${ri})">✕</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+function saveChinese() {
+  const hsk5 = parseInt(document.getElementById('ch-hsk5-pct').value)||null;
+  const hsk6 = parseInt(document.getElementById('ch-hsk6-pct').value)||null;
+  if (hsk5 !== null || hsk6 !== null) {
+    const cur = DB.get('hsk_progress') || {hsk5:0,hsk6:0};
+    if (hsk5 !== null) cur.hsk5 = hsk5;
+    if (hsk6 !== null) cur.hsk6 = hsk6;
+    DB.set('hsk_progress', cur);
+  }
+
+  DB.push('chinese_log', {
+    date: today(),
+    duration: parseInt(document.getElementById('ch-duration').value)||0,
+    vocab: parseInt(document.getElementById('ch-vocab-new').value)||0,
+    hsk: document.getElementById('ch-hsk').value,
+    activity: document.getElementById('ch-activity').value,
+    notes: document.getElementById('ch-notes').value,
+    ts: Date.now()
+  });
+
+  closeModal('chinese-modal');
+  renderChinese();
+  showToast('Session saved!');
+}
+
+function delChinese(idx) {
+  DB.del('chinese_log', idx);
+  renderChinese();
+}
+
+// ══════════════════════════════════════
+// AI LEARNING
+// ══════════════════════════════════════
+
+function renderAI() {
+  const log = DB.get('ai_log') || [];
+  const aiH = log.filter(l=>l.cat==='AI Skills'||l.cat==='Both').reduce((s,l)=>s+(parseFloat(l.hours)||0),0);
+  const ecH = log.filter(l=>l.cat==='E-commerce Skills'||l.cat==='Both').reduce((s,l)=>s+(parseFloat(l.hours)||0),0);
+  const projects = log.filter(l=>l.project && l.project.trim()).length;
+
+  const allSkills = [...new Set(
+    log.flatMap(l => (l.skills||'').split(',').map(s=>s.trim()).filter(Boolean))
+  )];
+
+  document.getElementById('ai-hours').textContent = aiH.toFixed(1);
+  document.getElementById('ec-hours').textContent = ecH.toFixed(1);
+  document.getElementById('ai-projects').textContent = projects;
+  document.getElementById('ai-skills-count').textContent = allSkills.length;
+
+  const tagsEl = document.getElementById('skills-tags');
+  if (allSkills.length) {
+    const colors = ['tag-purple','tag-blue','tag-green','tag-yellow','tag-orange','tag-cyan'];
+    tagsEl.innerHTML = allSkills.map((s,i) => 
+      `<span class="tag ${colors[i%colors.length]}">${s}</span>`
+    ).join('');
+  } else {
+    tagsEl.innerHTML = '<span style="color:var(--text3);font-size:13px">No skills logged yet.</span>';
+  }
+
+  const tbody = document.getElementById('ai-log-body');
+  if (!log.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No sessions logged yet.</td></tr>';
+  } else {
+    tbody.innerHTML = [...log].reverse().map((l, i) => {
+      const ri = log.length - 1 - i;
+      return `
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px">${l.date}</td>
+          <td><span class="tag ${l.cat==='AI Skills'?'tag-purple':l.cat==='E-commerce Skills'?'tag-blue':'tag-green'}">${l.cat}</span></td>
+          <td>${l.hours}h</td>
+          <td>${l.project||'—'}</td>
+          <td style="max-width:140px">${l.skills||'—'}</td>
+          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${l.notes||'—'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="delAI(${ri})">✕</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+function saveAI() {
+  DB.push('ai_log', {
+    date: today(),
+    cat: document.getElementById('ai-cat').value,
+    hours: parseFloat(document.getElementById('ai-dur').value)||0,
+    project: document.getElementById('ai-project').value,
+    skills: document.getElementById('ai-skills-new').value,
+    notes: document.getElementById('ai-notes').value,
+    ts: Date.now()
+  });
+  closeModal('ai-modal');
+  renderAI();
+  showToast('Progress logged!');
+}
+
+function delAI(idx) {
+  DB.del('ai_log', idx);
+  renderAI();
+}
+
+// ══════════════════════════════════════
+// INVESTING
+// ══════════════════════════════════════
+
+function renderInvesting() {
+  const notes = DB.get('portfolio_notes') || '';
+  const el = document.getElementById('portfolio-notes-text');
+  if (el) el.value = notes;
+
+  renderResearchLog();
+  renderWatchlist();
+}
+
+function savePortfolioNotes() {
+  DB.set('portfolio_notes', document.getElementById('portfolio-notes-text').value);
+  showToast('Notes saved!');
+}
+
+function saveResearch() {
+  DB.push('research_log', {
+    date: today(),
+    ticker: document.getElementById('inv-ticker').value,
+    type: document.getElementById('inv-type').value,
+    conviction: document.getElementById('inv-conviction').value,
+    notes: document.getElementById('inv-notes').value,
+    ts: Date.now()
+  });
+  closeModal('invest-modal');
+  renderResearchLog();
+  showToast('Research saved!');
+}
+
+function renderResearchLog() {
+  const log = DB.get('research_log') || [];
+  const tbody = document.getElementById('research-log-body');
+  if (!tbody) return;
+  if (!log.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No research notes yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...log].reverse().map((l, i) => {
+    const ri = log.length - 1 - i;
+    const tcolor = l.type==='Bullish'?'tag-green':l.type==='Bearish'?'tag-red':'tag-yellow';
+    const ccolor = l.conviction==='High'?'tag-green':l.conviction==='Medium'?'tag-yellow':'tag-red';
+    return `
+      <tr>
+        <td style="font-family:var(--mono);font-size:11px">${l.date}</td>
+        <td><strong>${l.ticker||'—'}</strong></td>
+        <td><span class="tag ${tcolor}">${l.type}</span></td>
+        <td style="max-width:200px">${l.notes||'—'}</td>
+        <td><span class="tag ${ccolor}">${l.conviction}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="delResearch(${ri})">✕</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function delResearch(idx) {
+  DB.del('research_log', idx);
+  renderResearchLog();
+}
+
+function saveWatchlist() {
+  DB.push('watchlist', {
+    ticker: document.getElementById('wl-ticker').value,
+    target: document.getElementById('wl-target').value,
+    notes: document.getElementById('wl-notes').value,
+    added: today()
+  });
+  closeModal('watchlist-modal');
+  renderWatchlist();
+  showToast('Added to watchlist!');
+}
+
+function renderWatchlist() {
+  const list = DB.get('watchlist') || [];
+  const container = document.getElementById('watchlist-container');
+  if (!container) return;
+  if (!list.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">👀</div>No stocks on watchlist yet.</div>';
+    return;
+  }
+  container.innerHTML = list.map((s, i) => `
+    <div class="watchlist-item">
+      <div>
+        <div class="watchlist-ticker">${s.ticker}</div>
+        <div style="font-size:12px;color:var(--text3)">${s.notes||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        ${s.target ? `<span style="font-size:13px;color:var(--text2)">Target: $${s.target}</span>` : ''}
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${s.added}</span>
+        <button class="btn btn-danger btn-sm" onclick="delWatchlist(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function delWatchlist(idx) {
+  DB.del('watchlist', idx);
+  renderWatchlist();
+}
+
+function invTab(el, id) {
+  document.querySelectorAll('#page-investing .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['inv-portfolio','inv-research','inv-watchlist'].forEach(p => {
+    document.getElementById(p).style.display = p === id ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════
+
+let analyticsRange = 7;
+
+function analyticsTab(el, id) {
+  document.querySelectorAll('#page-analytics .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  analyticsRange = id === 'an-week' ? 7 : id === 'an-month' ? 30 : 90;
+  renderAnalytics();
+}
+
+function renderAnalytics() {
+  const days = analyticsRange;
+  const labels = [];
+  const scores = [];
+  const cals = [];
+  const goalRates = [];
+  const pnls = [];
+  const studyH = [];
+
+  const trades = DB.get('trades') || [];
+  const nutLog = DB.get('nutrition_log') || [];
+  const chLog = DB.get('chinese_log') || [];
+  const aiLog = DB.get('ai_log') || [];
+
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    labels.push(ds.slice(5)); // MM-DD
+
+    scores.push(computeScore(ds));
+
+    const done = getGoalsForDate(ds);
+    goalRates.push(GOALS.filter(g=>done[g.id]).length);
+
+    const dayCals = nutLog.filter(n=>n.date===ds).reduce((s,n)=>s+(n.cal||0),0);
+    cals.push(dayCals);
+
+    const dayPnl = trades.filter(t=>t.date===ds).reduce((s,t)=>s+(parseFloat(t.pnl)||0),0);
+    pnls.push(parseFloat(dayPnl.toFixed(0)));
+
+    const dayStudy = [
+      ...chLog.filter(l=>l.date===ds).map(l=>parseFloat(l.duration||0)/60),
+      ...aiLog.filter(l=>l.date===ds).map(l=>parseFloat(l.hours||0))
+    ].reduce((a,b)=>a+b,0);
+    studyH.push(parseFloat(dayStudy.toFixed(1)));
+  }
+
+  drawBarChart('chart-scores', labels, scores, '#6c63ff', 'Score');
+  drawBarChart('chart-goals', labels, goalRates, '#22c55e', 'Goals Done');
+  drawBarChart('chart-calories', labels, cals, '#f97316', 'Calories');
+  drawLineChart('chart-pnl', labels, pnls, '#22c55e', '#ef4444');
+  drawBarChart('chart-study', labels, studyH, '#3b82f6', 'Hours');
+}
+
+function drawBarChart(canvasId, labels, data, color, yLabel) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth || 400;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+
+  const max = Math.max(...data, 1);
+  const pad = { top:16, right:16, bottom:32, left:40 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i=0; i<=4; i++) {
+    const y = pad.top + chartH - (i/4)*chartH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+chartW, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(144,144,168,0.6)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(max*i/4), pad.left-4, y+4);
+  }
+
+  const barW = Math.min(chartW / data.length * 0.7, 24);
+  const spacing = chartW / data.length;
+
+  data.forEach((v, i) => {
+    const x = pad.left + i * spacing + spacing/2 - barW/2;
+    const barH = (v / max) * chartH;
+    const y = pad.top + chartH - barH;
+
+    // Gradient bar
+    const grad = ctx.createLinearGradient(x, y, x, pad.top+chartH);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color + '44');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, barW, barH, [3,3,0,0]) : ctx.rect(x, y, barW, barH);
+    ctx.fill();
+
+    // Label
+    if (i % Math.ceil(data.length/8) === 0) {
+      ctx.fillStyle = 'rgba(90,90,114,0.8)';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[i], x + barW/2, H - 8);
+    }
+  });
+}
+
+function drawLineChart(canvasId, labels, data, positiveColor, negativeColor) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth || 400;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+
+  const pad = { top:16, right:16, bottom:32, left:50 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const max = Math.max(Math.abs(Math.max(...data)), Math.abs(Math.min(...data)), 1);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Zero line
+  const zeroY = pad.top + chartH/2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(pad.left+chartW, zeroY); ctx.stroke();
+
+  // Y labels
+  [-max, -max/2, 0, max/2, max].forEach((v, i) => {
+    const y = pad.top + chartH - (i/4)*chartH;
+    ctx.fillStyle = 'rgba(144,144,168,0.6)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(0), pad.left-4, y+3);
+  });
+
+  if (data.length < 2) return;
+  const spacing = chartW / (data.length - 1);
+
+  const getXY = i => ({
+    x: pad.left + i * spacing,
+    y: pad.top + chartH/2 - (data[i]/max) * (chartH/2)
+  });
+
+  // Area
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const {x,y} = getXY(i);
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(getXY(data.length-1).x, zeroY);
+  ctx.lineTo(getXY(0).x, zeroY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(34,197,94,0.08)';
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = positiveColor;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  data.forEach((v, i) => {
+    const {x,y} = getXY(i);
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((v, i) => {
+    const {x,y} = getXY(i);
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI*2);
+    ctx.fillStyle = v >= 0 ? positiveColor : negativeColor;
+    ctx.fill();
+  });
+
+  // Labels
+  data.forEach((v, i) => {
+    if (i % Math.ceil(data.length/8) === 0) {
+      ctx.fillStyle = 'rgba(90,90,114,0.8)';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[i], getXY(i).x, H - 8);
+    }
+  });
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+
+function formatDate(ds) {
+  if (!ds) return '';
+  const d = new Date(ds + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+}
+
+function initDateDisplay() {
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('sidebar-date').textContent = now.toLocaleDateString('en-US', opts);
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  document.getElementById('goals-today-label').textContent = now.toLocaleDateString('en-US', opts);
+}
+
+// Event: date picker change
+document.addEventListener('DOMContentLoaded', () => {
+  initDateDisplay();
+
+  // Nav items
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => navigate(el.dataset.page));
+  });
+
+  // Date picker in journal
+  const dp = document.getElementById('journal-date-picker');
+  dp.value = today();
+  dp.addEventListener('change', () => loadJournalEntry(dp.value));
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+
+  // Journal text areas trigger score update
+  ['j-activities','j-wins','j-mistakes','j-lessons','j-notes','j-tomorrow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => updateJournalScore(dp.value));
+  });
+
+  // Initial render
+  renderDashboard();
+});
 </script>
 </body>
 </html>
